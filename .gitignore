@@ -3,6 +3,9 @@ elm-stuff
 repl-temp-*
 elm.js
 
+# Stack files:
+.stack-work
+
 # Editor files:
 TAGS
 
