@@ -2,17 +2,25 @@ module ShopShare exposing (Model, Msg, init, subscriptions, update, view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onInput)
 
 
 -- MODEL
 
 
 type alias Model =
-    { shopping_lists : List ShoppingList }
+    { shoppingLists : List ShoppingList }
 
 
 type alias ShoppingList =
-    { name : String, list_items : List ListItem }
+    { id : ShoppingListId
+    , name : String
+    , listItems : List ListItem
+    }
+
+
+type alias ShoppingListId =
+    Int
 
 
 type alias ListItem =
@@ -23,7 +31,18 @@ type alias ListItem =
 
 init : ( Model, Cmd Msg )
 init =
-    { shopping_lists = [{name = "", list_items =[]}] } ! []
+    { shoppingLists =
+        [ { id = 0
+          , name = ""
+          , listItems =
+                [ { text = ""
+                  , completed = False
+                  }
+                ]
+          }
+        ]
+    }
+        ! []
 
 
 
@@ -31,14 +50,30 @@ init =
 
 
 type Msg
-    = NoOp
+    = ShoppingListNameEdited Int String
+    | ItemAdded
+    | ItemTextEdited
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NoOp ->
+        ShoppingListNameEdited updatedId newName ->
+            { model | shoppingLists = List.map (updateName updatedId newName) model.shoppingLists } ! []
+
+        ItemAdded ->
             model ! []
+
+        ItemTextEdited ->
+            model ! []
+
+
+updateName : ShoppingListId -> String -> ShoppingList -> ShoppingList
+updateName updatedId newName list =
+    if list.id == updatedId then
+        { list | name = newName }
+    else
+        list
 
 
 
@@ -49,25 +84,31 @@ view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "Hello shop share!" ]
-        , div [ id "create-list-form" ] [ Html.form [ class "form" ] [ input [ placeholder "enter some text" ] [] ] ]
-        , ol [ id "lists" ] (List.map viewShoppingList model.shopping_lists)
+        , ol [ id "lists" ] (List.map viewShoppingList model.shoppingLists)
         ]
 
 
 viewShoppingList : ShoppingList -> Html Msg
 viewShoppingList list =
     li []
-        [ text list.name
+        [ input
+            [ placeholder "List name"
+            , onInput (ShoppingListNameEdited list.id)
+            , value list.name
+            ]
+            []
         , div []
-            [ input [ placeholder "enter some text" ] []
-            , ul [ class "list" ] (List.map viewListItem list.list_items)
+            [ ul [ class "list" ] (List.map viewListItem list.listItems)
             ]
         ]
 
 
 viewListItem : ListItem -> Html Msg
 viewListItem item =
-    li [] [ text item.text, input [ type_ "checkbox", name "list-item", value item.text ] [] ]
+    li []
+        [ input [ placeholder "Item name" ] []
+        , input [ type_ "checkbox", name "list-item", value item.text ] []
+        ]
 
 
 subscriptions : Model -> Sub Msg
