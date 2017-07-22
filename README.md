@@ -4,6 +4,9 @@
 
 ## lists
 [] create a list
+    [] Start with one empty list
+    [] Existing lists are collapsed
+    [] Selecting a list expands it's content
 
 ## items
 [] create an item
