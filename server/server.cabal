@@ -4,7 +4,6 @@ version:             0.0.0.1
 -- description:
 homepage:            https://github.com/kylesnowschwartz/shop-share
 license:             MIT
-license-file:        LICENSE
 author:              Kyle Snow Schwartz & Kieran Trezona-le Comte
 maintainer:          trezona.lecomte@gmail.com
 copyright:           2017 Kyle Snow Schwartz & Kieran Trezona-le Comte
@@ -15,8 +14,14 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Lib
+  exposed-modules:     Server
   build-depends:       base >= 4.7 && < 5
+                     , bytestring
+                     , http-types
+                     , wai
+                     , wai-websockets
+                     , warp
+                     , websockets
   default-language:    Haskell2010
 
 executable server-exe
