@@ -6,16 +6,21 @@ module Server
     ) where
 
 
+import           API
 import qualified Control.Concurrent             as Concurrent
 import           Data.ByteString                (ByteString)
 import qualified Network.HTTP.Types             as Http
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.Warp       as Warp
 import qualified Network.Wai.Handler.WebSockets as WSHandler
+import qualified Network.Wai.Middleware.Static  as WaiStatic
 import qualified Network.WebSockets             as WS
+import qualified Servant
+import qualified Servant.API
+-- import qualified Servant.Server                 as Servant
 
 
--- TYPES
+-- SERVER TYPES
 
 newtype Config = Config { port :: Int }
 
@@ -35,8 +40,15 @@ defaultConfig =
 
 httpApp :: Wai.Application
 httpApp request respond =
-  respond $ Wai.responseLBS Http.status400 [] "REST API under construction."
+  if isRequestForIndex request
+  then respond $ Wai.responseLBS Http.status400 [] "REST API under construction."
+  else WaiStatic.static apiApp request respond
 
+apiApp :: Wai.Application
+apiApp = Servant.serve (Servant.Proxy :: Servant.Proxy API) api
+
+isRequestForIndex :: Wai.Request -> Bool
+isRequestForIndex request = null (Wai.pathInfo request)
 
 -- WEBSOCKET SERVER
 
