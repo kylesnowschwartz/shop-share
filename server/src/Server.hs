@@ -7,15 +7,15 @@ module Server
     ) where
 
 import           API
-import qualified Control.Concurrent             as Concurrent
+import           Control.Concurrent             (MVar, modifyMVar, modifyMVar_,
+                                                 newMVar, readMVar)
 import qualified Control.Exception              as Exception
-import qualified Control.Monad                  as Monad
+import           Control.Monad                  (forM_, forever)
 import           Data.Aeson                     (FromJSON, ToJSON, (.:), (.=))
 import qualified Data.Aeson                     as JSON
 import           Data.ByteString                (ByteString)
 import qualified Data.ByteString                as ByteString
 import qualified Data.ByteString.Lazy.Internal  as LazyByteString
-import           Data.Monoid                    ((<>))
 import qualified Data.Set                       as Set
 import           Data.Text                      (Text)
 import qualified Data.Text                      as Text
@@ -116,12 +116,12 @@ isRequestForIndex request = null (Wai.pathInfo request)
 
 -- WEBSOCKET SERVER
 
-wsApp :: Concurrent.MVar State -> WS.ServerApp
+wsApp :: MVar State -> WS.ServerApp
 wsApp stateMVar pending = do
   conn <- WS.acceptRequest pending
   WS.forkPingThread conn 30
   msg <- WS.receiveData conn -- TODO: Should we be using receiveDataMessage here?
-  state <- Concurrent.readMVar stateMVar
+  state <- readMVar stateMVar
 
   let client = Client (nextClientId state) conn
 
@@ -136,32 +136,33 @@ nextClientId :: State -> Text
 nextClientId state =
   "1"
 
-connect :: WS.Connection -> Concurrent.MVar State -> Client -> IO ()
+connect :: WS.Connection -> MVar State -> Client -> IO ()
 connect conn stateMVar client = do
-  Concurrent.modifyMVar_ stateMVar $ updateClients Set.insert client
+  modifyMVar_ stateMVar $ updateClients Set.insert client
   WS.sendTextData conn (encodeConnected $ clientId client)
 
-disconnect :: Concurrent.MVar State -> Client -> IO ()
+disconnect :: MVar State -> Client -> IO ()
 disconnect stateMVar client =
-  Concurrent.modifyMVar_ stateMVar $ updateClients Set.delete client
+  modifyMVar_ stateMVar $ updateClients Set.delete client
 
 updateClients :: (Client -> Clients -> Clients) -> Client -> State -> IO State
 updateClients alteration client state =
   return $ State $ alteration client $ clients state
 
-talk conn stateMVar client = Monad.forever $ do
+talk :: WS.Connection -> MVar State -> Client -> IO ()
+talk conn stateMVar client = forever $ do
   WS.receiveData conn >>= updateState stateMVar
-  newState <- Concurrent.readMVar stateMVar
+  newState <- readMVar stateMVar
   broadcast newState
 
-updateState :: Concurrent.MVar State -> Text -> IO State
+updateState :: MVar State -> Text -> IO State
 updateState stateMVar msg =
-  Concurrent.modifyMVar stateMVar $ \state ->
+  modifyMVar stateMVar $ \state ->
     return (state, State $ clients state)
 
 broadcast :: State -> IO ()
 broadcast state =
-  Monad.forM_ (clients state) $ \client ->
+  forM_ (clients state) $ \client ->
     WS.sendTextData (conn client) $ encodeState state
 
 encodeState :: State -> Text
@@ -173,7 +174,7 @@ encodeState state =
 
 runServer :: Config -> IO ()
 runServer config = do
-  initialState <- Concurrent.newMVar initialServerState
+  initialState <- newMVar initialServerState
 
   WaiLogger.withStdoutLogger $ \logger -> do
     let settings = Warp.setLogger logger . Warp.setPort (port config) $ Warp.defaultSettings
