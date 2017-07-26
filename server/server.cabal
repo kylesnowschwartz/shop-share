@@ -30,6 +30,7 @@ library
                      , servant-server
                      , text
                      , wai
+                     , wai-logger
                      , wai-middleware-static
                      , wai-websockets
                      , warp
