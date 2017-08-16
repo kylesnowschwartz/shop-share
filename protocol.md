@@ -1,6 +1,18 @@
 # WS Protocol
 
 
+## Errors
+
+Server -> Client
+```json
+{
+  "error": {
+    "message": "Action not yet built. Sorry! Come back later :-)"
+  }
+}
+```
+
+
 ## Register
 
 Client -> Server
