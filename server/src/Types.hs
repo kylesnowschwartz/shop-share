@@ -51,9 +51,9 @@ instance FromJSON Action where
     actionType <- action .: "type"
 
     case actionType of
-      "register"        -> pure Register
-      "createList"      -> pure CreateList
-      "subscribeToList" -> SubscribeToList <$> obj .: "listId"
+      "Register"        -> pure Register
+      "CreateList"      -> pure CreateList
+      "SubscribeToList" -> SubscribeToList <$> obj .: "listId"
       _                 -> fail ("unknown action type: " ++ actionType)
 
 decodeAction :: ByteString -> Either String Action
@@ -61,12 +61,12 @@ decodeAction =
   JSON.eitherDecodeStrict
 
 encodeRegistered :: Text -> LazyByteString.ByteString
-encodeRegistered clientId =
+encodeRegistered clientId' =
   JSON.encode $ JSON.object
   [
     "confirmAction" .= JSON.object
     [ "type" .= JSON.String ("Register" :: Text)
-    , "clientId" .= JSON.String clientId
+    , "clientId" .= JSON.String clientId'
     ]
   ]
 

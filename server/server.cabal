@@ -19,7 +19,6 @@ library
                      , Types
                      , HttpServer
                      , WsServer
-                     , JSON
   build-depends:       base >= 4.7 && < 5
                      , aeson
                      , bytestring
