@@ -70,7 +70,7 @@ updateState _stateMVar msg =
         GetLists ->
           return $ encodeLists []
         _ ->
-          return $ encodeError $ Text.pack "Unsupported action"
+          return $ encodeError $ Text.pack "Action not yet built. Sorry! Come back later :-)"
 
 updateClients :: (Client -> Set Client -> Set Client) -> Client -> State -> IO State
 updateClients alteration client state =
