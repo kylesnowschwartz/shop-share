@@ -1,6 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
-import qualified Server
+import           Server (runServer)
 
 main :: IO ()
-main = Server.runServer Server.defaultConfig
+main = runServer
