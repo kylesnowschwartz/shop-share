@@ -40,10 +40,10 @@ data Action = Register
             | SubscribeToList Text deriving (Generic, Show)
 
 instance ToJSON Action where
-  toJSON Register = JSON.object [ "action" .= JSON.object [ "type" .= ("register" :: JSON.Value) ] ]
-  toJSON CreateList = JSON.object [ "type" .= ("createList" :: JSON.Value) ]
-  toJSON (SubscribeToList _) = JSON.object [ "type" .= ("subscribeToList" :: JSON.Value) ]
-  toJSON _ = errorEncoder "Unsupported action"
+  toJSON Register = JSON.object [ "action" .= JSON.object [ "type" .= ("Register" :: JSON.Value) ] ]
+  toJSON GetLists = JSON.object [ "action" .= JSON.object [ "type" .= ("GetLists" :: JSON.Value) ] ]
+  toJSON CreateList = JSON.object [ "type" .= ("CreateList" :: JSON.Value) ]
+  toJSON (SubscribeToList _) = JSON.object [ "type" .= ("SubscribeToList" :: JSON.Value) ]
 
 instance FromJSON Action where
   parseJSON = JSON.withObject "action" $ \obj -> do
@@ -52,6 +52,7 @@ instance FromJSON Action where
 
     case actionType of
       "Register"        -> pure Register
+      "GetLists"        -> pure GetLists
       "CreateList"      -> pure CreateList
       "SubscribeToList" -> SubscribeToList <$> obj .: "listId"
       _                 -> fail ("unknown action type: " ++ actionType)
