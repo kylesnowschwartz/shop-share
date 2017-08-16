@@ -13,6 +13,7 @@ import           Data.Set                      (Set)
 import qualified Data.Set                      as Set
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
+import           DB
 import qualified Network.WebSockets            as WS
 import           Types
 
@@ -68,7 +69,7 @@ updateState _stateMVar msg =
     Right action ->
       case action of
         GetLists ->
-          return $ encodeLists []
+          encodeLists <$> runDB selectAllLists
         _ ->
           return $ encodeError $ Text.pack "Action not yet built. Sorry! Come back later :-)"
 
