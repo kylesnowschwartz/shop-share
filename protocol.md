@@ -1,4 +1,4 @@
-# Protocol
+# WS Protocol
 
 
 ## Register
@@ -45,6 +45,34 @@ Server -> Client
         "title": "foo"
       }
     ]
+  }
+}
+```
+
+## CreateList
+
+* TODO: What ids should the clients give lists before they're persisted?
+  - UUIDs on the client, then DB ids after persisted
+
+Client -> Server
+```json
+{
+  "action": {
+    "type": "CreateList",
+    "title": "Foo bar list"
+  }
+}
+```
+
+Server -> Client
+```json
+{
+  "confirmAction": {
+    "type": "CreateList",
+    "list": {
+      "listId": "1",
+      "title": "foo"
+    }
   }
 }
 ```
