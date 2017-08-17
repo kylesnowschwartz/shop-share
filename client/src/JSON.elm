@@ -25,6 +25,12 @@ actionDecoder =
                     "GetLists" ->
                         decodeGetLists
 
+                    "CreateList" ->
+                        decodeCreateList
+
+                    "UpdateListTitle" ->
+                        decodeEditListTitle
+
                     other ->
                         fail <| "Unknown action received from server: " ++ other
             )
@@ -32,13 +38,26 @@ actionDecoder =
 
 decodeRegister : Decoder Action
 decodeRegister =
-    map Register (at [ "confirmAction", "data", "clientId" ] int)
+    map Register
+        (Debug.log "decode register action" (at [ "confirmAction", "data", "clientId" ] int))
 
 
 decodeGetLists : Decoder Action
 decodeGetLists =
     map GetLists
         (at [ "confirmAction", "data", "lists" ] (list decodeShoppingList))
+
+
+decodeCreateList : Decoder Action
+decodeCreateList =
+    map CreateList
+        (at [ "confirmAction", "data", "list" ] (decodeShoppingList))
+
+
+decodeEditListTitle : Decoder Action
+decodeEditListTitle =
+    map EditListTitle
+        (at [ "confirmAction", "data", "list" ] (decodeShoppingList))
 
 
 decodeShoppingList : Decoder ShoppingList
@@ -84,3 +103,13 @@ registerAction =
 getListsAction : String
 getListsAction =
     "{\"action\": {\"type\": \"GetLists\"}}"
+
+
+createListAction : String
+createListAction =
+    "{\"action\": {\"type\": \"CreateList\", \"title\": \"\"}}"
+
+
+editListTitleAction : ShoppingListId -> String -> String
+editListTitleAction listId newTitle =
+    "{\"action\": {\"type\": \"UpdateListTitle\", \"title\": \"" ++ newTitle ++ "\", \"listId\": " ++ toString listId ++ "}}"

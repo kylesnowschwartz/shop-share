@@ -10,7 +10,7 @@ type alias Model =
 
 type alias ShoppingList =
     { id : ShoppingListId
-    , name : String
+    , title : String
     , listItems : List ListItem
     }
 
@@ -22,10 +22,15 @@ type alias ListItem =
     }
 
 
+type alias Group =
+    { id : GroupId }
+
+
 type Action
     = Register ClientId
     | GetLists (List ShoppingList)
     | CreateList ShoppingList
+    | EditListTitle ShoppingList
 
 
 type alias ShoppingListId =
@@ -37,4 +42,8 @@ type alias ItemId =
 
 
 type alias ClientId =
+    Int
+
+
+type alias GroupId =
     Int

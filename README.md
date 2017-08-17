@@ -12,7 +12,7 @@
 [x] create an item
 [x] update an item
 [x] read an item
-[x] destroy an item
+[X] destroy an item
 [x] check off an item
 
 # Stretch Goals
