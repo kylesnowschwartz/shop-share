@@ -14,3 +14,7 @@ TAGS
 
 # Emacs files:
 \#*\#
+
+# .xcodeproj bullshit
+swift-client/Goojle\ Retain/Pods/
+swift-client/Goojle\ Retain/Podfile.lock
