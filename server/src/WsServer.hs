@@ -37,9 +37,9 @@ wsApp stateMVar pending = do
 
     Left err -> WS.sendTextData connection $ encodeError $ Text.pack err
 
-nextClientId :: State -> Text
+nextClientId :: State -> Integer
 nextClientId _state =
-  "1"
+  1
 
 connect :: MVar State -> Client -> IO ()
 connect stateMVar client@Client{..} = do
@@ -83,4 +83,4 @@ updateClients alteration client state =
 
 encodeState :: State -> Text
 encodeState state =
-  Text.concat $ map clientId (Set.elems $ clients state)
+  Text.concat $ map (Text.pack . show . clientId) (Set.elems $ clients state)

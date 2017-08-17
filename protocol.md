@@ -30,7 +30,7 @@ Server -> Client
   "confirmAction": {
     "type": "Register",
     "data": {
-      "clientId": "1"
+      "clientId": 1
     }
   }
 }
@@ -86,7 +86,7 @@ Server -> Client
   "confirmAction": {
     "type": "CreateList",
     "list": {
-      "listId": "1",
+      "listId": 1,
       "title": "foo"
     }
   }

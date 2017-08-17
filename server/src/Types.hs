@@ -19,7 +19,7 @@ newtype Config = Config { port :: Int }
 
 newtype State = State { clients :: Set.Set Client }
 
-data Client = Client { clientId :: Text, conn :: Connection }
+data Client = Client { clientId :: Integer, conn :: Connection }
 
 instance Eq Client where
   (Client id1 _) == (Client id2 _) = id1 == id2
@@ -63,13 +63,13 @@ decodeAction :: ByteString -> Either String Action
 decodeAction =
   JSON.eitherDecodeStrict
 
-encodeRegistered :: Text -> LazyByteString.ByteString
+encodeRegistered :: Integer -> LazyByteString.ByteString
 encodeRegistered clientId' =
   JSON.encode $ JSON.object
   [
     "confirmAction" .= JSON.object
     [ "type" .= JSON.String ("Register" :: Text)
-    , "data" .= JSON.object [ "clientId" .= JSON.String clientId' ]
+    , "data" .= JSON.object [ "clientId" .= clientId' ]
     ]
   ]
 
