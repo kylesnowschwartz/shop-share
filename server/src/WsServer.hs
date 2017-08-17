@@ -70,6 +70,10 @@ updateState _stateMVar msg =
       case action of
         GetLists ->
           encodeLists <$> runDB selectAllLists
+
+        CreateList title ->
+          return $ encodeListCreated (List 1 title)
+
         _ ->
           return $ encodeError $ Text.pack "Action not yet built. Sorry! Come back later :-)"
 
