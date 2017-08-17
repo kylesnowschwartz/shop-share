@@ -3,7 +3,6 @@ module ShopShare exposing (Model, Msg, init, subscriptions, update, view)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
-import List.Extra exposing (..)
 
 
 -- MODEL
@@ -57,9 +56,9 @@ init =
 
 
 type Msg
-    = ShoppingListNameEdited Int String
-    | ItemAdded Int String
-    | ItemEdited Int Int String
+    = ShoppingListNameEdited ShoppingListId String
+    | ItemAdded ShoppingListId String
+    | ItemEdited ShoppingListId ItemId String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -85,7 +84,7 @@ addItem newItem list =
     { list | listItems = list.listItems ++ [ { id = (incrementItemId list), text = newItem, completed = False } ] }
 
 
-editItem : String -> Int -> ShoppingList -> ShoppingList
+editItem : String -> ItemId -> ShoppingList -> ShoppingList
 editItem newItemText newItemId list =
     let
         applyIfEdited item =
@@ -97,7 +96,7 @@ editItem newItemText newItemId list =
         { list | listItems = List.map applyIfEdited list.listItems }
 
 
-incrementItemId : ShoppingList -> Int
+incrementItemId : ShoppingList -> ItemId
 incrementItemId list =
     Maybe.withDefault 0 (List.maximum (List.map .id list.listItems)) + 1
 
