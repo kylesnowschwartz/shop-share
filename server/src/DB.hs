@@ -48,3 +48,8 @@ updateList :: Text -> Integer -> PGTransaction (Maybe List)
 updateList newTitle id' = do
   list <- query (newTitle, id') "UPDATE lists SET title = ? WHERE id = ? RETURNING id, title"
   return $ listToMaybe list
+
+insertItem :: Text -> Integer -> PGTransaction (Maybe Item)
+insertItem title' listId' = do
+  item <- query (title', listId') "INSERT INTO items VALUES (DEFAULT, ?, false, ?) RETURNING id, text, completed, list_id"
+  return $ listToMaybe item

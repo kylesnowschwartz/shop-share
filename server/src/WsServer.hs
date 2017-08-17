@@ -77,6 +77,9 @@ updateState _stateMVar msg =
         UpdateListTitle newTitle id' ->
           encodeIfSuccess (encodeList "UpdateListTitle") <$> runDB (updateList newTitle id')
 
+        CreateItem itemText listId' ->
+          encodeItemIfSuccess (encodeItem "CreateItem") <$> runDB (insertItem itemText listId')
+
         _ ->
           return $ encodeError $ Text.pack "Action not yet built. Sorry! Come back later :-)"
 

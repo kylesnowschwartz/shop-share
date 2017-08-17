@@ -56,6 +56,7 @@ data Action = Register
             | GetLists
             | CreateList Text
             | UpdateListTitle Text Integer
+            | CreateItem Text Integer
             | SubscribeToList Text deriving (Generic, Show)
 
 instance ToJSON Action where
@@ -74,6 +75,7 @@ instance FromJSON Action where
       "GetLists"        -> pure GetLists
       "CreateList"      -> CreateList <$> action .: "title"
       "UpdateListTitle" -> UpdateListTitle <$> action .: "title" <*> action .: "listId"
+      "CreateItem"      -> CreateItem <$> action .: "text" <*> action .: "listId"
       "SubscribeToList" -> SubscribeToList <$> action .: "listId"
       _                 -> fail ("unknown action type: " ++ actionType)
 
@@ -111,9 +113,23 @@ encodeList action list =
     ]
   ]
 
+encodeItem :: Text -> Item -> LazyByteString.ByteString
+encodeItem action item =
+  JSON.encode $ JSON.object
+  [
+    "confirmAction" .= JSON.object
+    [ "type" .= JSON.String action
+    , "data" .= JSON.object [ "item" .= item ]
+    ]
+  ]
+
 encodeIfSuccess :: (List -> LazyByteString.ByteString) -> Maybe List -> LazyByteString.ByteString
 encodeIfSuccess _ Nothing = encodeError $ Text.pack "Sorry, we couldn't make that change! :-("
 encodeIfSuccess encoder (Just list) = encoder list
+
+encodeItemIfSuccess :: (Item -> LazyByteString.ByteString) -> Maybe Item -> LazyByteString.ByteString
+encodeItemIfSuccess _ Nothing = encodeError $ Text.pack "Sorry, we couldn't make that change! :-("
+encodeItemIfSuccess encoder (Just item) = encoder item
 
 encodeError :: Text -> LazyByteString.ByteString
 encodeError err =
