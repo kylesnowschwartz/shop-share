@@ -133,3 +133,33 @@ Server -> Client
   }
 }
 ```
+
+## CreateItem
+
+Client -> Server
+```json
+{
+  "action": {
+    "type": "CreateItem",
+    "text": "",
+    "listId": 1
+  }
+}
+```
+
+Server -> Client
+```json
+{
+  "confirmAction": {
+    "type": "CreateItem",
+    "data": {
+      "item": {
+        "listsId": 1,
+        "text": "item for list 1",
+        "itemId": 3,
+        "completed": false
+      }
+    }
+  }
+}
+```
