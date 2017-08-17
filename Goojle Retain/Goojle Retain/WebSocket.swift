@@ -21,17 +21,17 @@ class GRWebSocket : WebSocketDelegate {
     }
 
     func send(_ action: ClientAction) {
-        let string = action.toString()
+        let string = action.toJSONString()
         print("Sending : \(string)")
         socket.write(string: string)
     }
 
     internal let socket : WebSocket
-    internal let url = URL(string: "ws://a77baf75.ngrok.io/")!
+    internal let url = URL(string: "ws://afebe343.ngrok.io")!
 
     func websocketDidConnect(socket: WebSocket) {
         print("Websocket connected")
-        GRWebSocket.shared.send(.register)
+        send(.register)
     }
 
     func websocketDidReceiveData(socket: WebSocket, data: Data) {
@@ -42,7 +42,14 @@ class GRWebSocket : WebSocketDelegate {
     }
 
     func websocketDidReceiveMessage(socket: WebSocket, text: String) {
-        print(text)
-    }
+        guard let data = text.data(using: .utf8),
+            let jsonData = try? JSONSerialization.jsonObject(with: data) else {
 
+                return
+        }
+
+        dump(jsonData)
+    }
 }
+
+

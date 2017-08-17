@@ -11,7 +11,7 @@ import Foundation
 enum ClientAction {
     case register
 
-    func toString() -> String {
+    func toJSONString() -> String {
         switch self {
         case .register:
             return "{\"action\": {\"type\": \"Register\"}}"
@@ -19,16 +19,17 @@ enum ClientAction {
     }
 
 }
+//
+//enum Server {
+//    case register(response : RegisterResponse)
+//    case error(error : SocketError)
+//}
+//
+//struct RegisterResponse {
+//
+//}
+//
+//struct SocketError {
+//
+//}
 
-enum Server {
-    case register(response : RegisterResponse)
-    case error(error : SocketError)
-}
-
-struct RegisterResponse {
-
-}
-
-struct SocketError {
-
-}
