@@ -29,7 +29,9 @@ Server -> Client
 {
   "confirmAction": {
     "type": "Register",
-    "clientId": "1"
+    "data": {
+      "clientId": "1"
+    }
   }
 }
 ```
@@ -51,12 +53,14 @@ Server -> Client
 {
   "confirmAction": {
     "type": "GetLists",
-    "lists": [
-      {
-        "listId": "1",
-        "title": "foo"
-      }
-    ]
+    "data": {
+      "lists": [
+        {
+          "id": 1,
+          "title": "Test shopping list"
+        }
+      ]
+    }
   }
 }
 ```

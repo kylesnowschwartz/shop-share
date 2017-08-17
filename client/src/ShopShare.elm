@@ -98,7 +98,7 @@ addItem newItem list =
     { list | listItems = list.listItems ++ [ { id = (incrementItemId list), text = newItem, completed = False } ] }
 
 
-editItem : String -> Int -> ShoppingList -> ShoppingList
+editItem : String -> ItemId -> ShoppingList -> ShoppingList
 editItem newItemText newItemId list =
     let
         applyIfEdited item =
@@ -122,7 +122,7 @@ checkItem itemChecked newItemId list =
         { list | listItems = List.map applyIfChecked list.listItems }
 
 
-incrementItemId : ShoppingList -> Int
+incrementItemId : ShoppingList -> ItemId
 incrementItemId list =
     Maybe.withDefault 0 (List.maximum (List.map .id list.listItems)) + 1
 
