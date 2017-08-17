@@ -30,7 +30,7 @@ init =
                 ]
           }
         ]
-    , clientId = 0
+    , clientId = Nothing
     }
         ! [ WS.send wsAddress (JSON.registerAction) ]
 
@@ -76,7 +76,7 @@ handleMessage model message =
         Ok action ->
             case action of
                 Register newId ->
-                    { model | clientId = newId }
+                    { model | clientId = Just newId }
 
                 GetLists lists ->
                     { model | shoppingLists = lists }
@@ -153,8 +153,19 @@ view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "Hello shop share!" ]
+        , viewClientId model
         , ol [ id "lists" ] (List.map viewShoppingList model.shoppingLists)
         ]
+
+
+viewClientId : Model -> Html Msg
+viewClientId model =
+    case model.clientId of
+        Nothing ->
+            div [] []
+
+        Just id ->
+            h3 [] [ text ("Registered with server as client " ++ toString id) ]
 
 
 viewShoppingList : ShoppingList -> Html Msg

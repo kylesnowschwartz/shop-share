@@ -3,7 +3,7 @@ module Types exposing (..)
 
 type alias Model =
     { shoppingLists : List ShoppingList
-    , clientId : ClientId
+    , clientId : Maybe ClientId
     }
 
 
