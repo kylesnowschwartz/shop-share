@@ -3,17 +3,19 @@
 
 module Types where
 
-import           Data.Aeson                    (FromJSON, ToJSON, (.:), (.=))
-import qualified Data.Aeson                    as JSON
-import           Data.ByteString               (ByteString)
-import qualified Data.ByteString.Lazy.Internal as LazyByteString
-import           Data.Semigroup                ((<>))
-import           Data.Set                      as Set
-import           Data.Text                     (Text)
-import qualified Data.Text                     as Text
-import           Database.PostgreSQL.Simple    (FromRow)
-import           GHC.Generics                  (Generic)
-import           Network.WebSockets            (Connection)
+import           Data.Aeson                         (FromJSON, ToJSON, (.:),
+                                                     (.=))
+import qualified Data.Aeson                         as JSON
+import           Data.ByteString                    (ByteString)
+import qualified Data.ByteString.Lazy.Internal      as LazyByteString
+import           Data.Semigroup                     ((<>))
+import           Data.Set                           as Set
+import           Data.Text                          (Text)
+import qualified Data.Text                          as Text
+import           Database.PostgreSQL.Simple         (FromRow)
+import           Database.PostgreSQL.Simple.FromRow
+import           GHC.Generics                       (Generic)
+import           Network.WebSockets                 (Connection)
 
 newtype Config = Config { port :: Int }
 
@@ -28,17 +30,34 @@ instance Ord Client where
   compare (Client id1 _) (Client id2 _) = compare id1 id2
 
 data List =
-  List { id    :: Integer
-       , title :: Text
+  List { listId :: Integer
+       , title  :: Text
+       , items  :: [Item]
        } deriving (Generic, Show)
 
-instance FromRow List
 instance ToJSON List
 instance FromJSON List
+
+instance FromRow List where
+  fromRow = List <$> field <*> field <*> pure []
+
+data Item =
+  Item { itemId    :: Integer
+       , text      :: Text
+       , completed :: Bool
+       , listsId   :: Integer
+       } deriving (Generic, Show)
+
+instance FromRow Item
+instance ToJSON Item
+instance FromJSON Item
 
 data Action = Register
             | GetLists
             | CreateList Text
+            | DeleteList Integer
+            | UpdateListTitle Text Integer
+            | CreateItem Text Integer
             | SubscribeToList Text deriving (Generic, Show)
 
 instance ToJSON Action where
@@ -55,8 +74,11 @@ instance FromJSON Action where
     case actionType of
       "Register"        -> pure Register
       "GetLists"        -> pure GetLists
-      "CreateList"      -> CreateList <$> obj .: "title"
-      "SubscribeToList" -> SubscribeToList <$> obj .: "listId"
+      "CreateList"      -> CreateList <$> action .: "title"
+      "DeleteList"      -> DeleteList <$> action .: "listId"
+      "UpdateListTitle" -> UpdateListTitle <$> action .: "title" <*> action .: "listId"
+      "CreateItem"      -> CreateItem <$> action .: "text" <*> action .: "listId"
+      "SubscribeToList" -> SubscribeToList <$> action .: "listId"
       _                 -> fail ("unknown action type: " ++ actionType)
 
 decodeAction :: ByteString -> Either String Action
@@ -83,15 +105,33 @@ encodeLists lists =
     ]
   ]
 
-encodeListCreated :: List -> LazyByteString.ByteString
-encodeListCreated list =
+encodeList :: Text -> List -> LazyByteString.ByteString
+encodeList action list =
   JSON.encode $ JSON.object
   [
     "confirmAction" .= JSON.object
-    [ "type" .= JSON.String ("CreateList" :: Text)
+    [ "type" .= JSON.String action
     , "data" .= JSON.object [ "list" .= list ]
     ]
   ]
+
+encodeItem :: Text -> Item -> LazyByteString.ByteString
+encodeItem action item =
+  JSON.encode $ JSON.object
+  [
+    "confirmAction" .= JSON.object
+    [ "type" .= JSON.String action
+    , "data" .= JSON.object [ "item" .= item ]
+    ]
+  ]
+
+encodeIfSuccess :: (List -> LazyByteString.ByteString) -> Maybe List -> LazyByteString.ByteString
+encodeIfSuccess _ Nothing = encodeError $ Text.pack "Sorry, we couldn't make that change! :-("
+encodeIfSuccess encoder (Just list) = encoder list
+
+encodeItemIfSuccess :: (Item -> LazyByteString.ByteString) -> Maybe Item -> LazyByteString.ByteString
+encodeItemIfSuccess _ Nothing = encodeError $ Text.pack "Sorry, we couldn't make that change! :-("
+encodeItemIfSuccess encoder (Just item) = encoder item
 
 encodeError :: Text -> LazyByteString.ByteString
 encodeError err =

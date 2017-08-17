@@ -72,10 +72,8 @@ Server -> Client
 }
 ```
 
-## CreateList
 
-* TODO: What ids should the clients give lists before they're persisted?
-  - UUIDs on the client, then DB ids after persisted
+## CreateList
 
 Client -> Server
 ```json
@@ -92,9 +90,101 @@ Server -> Client
 {
   "confirmAction": {
     "type": "CreateList",
-    "list": {
-      "listId": 1,
-      "title": "foo"
+    "data": {
+      "list": {
+        "items": [],
+        "listId": 12,
+        "title": "New fucking list, brah!"
+      }
+    }
+  }
+}
+```
+
+
+## DeleteList
+
+Client -> Server
+```json
+{
+  "action": {
+    "type": "DeleteList",
+    "listId": 9
+  }
+}
+```
+
+Server -> Client
+```json
+{
+  "confirmAction": {
+    "type": "GetLists",
+    "data": {
+      "lists": [{
+        "items": [],
+        "listId": 1,
+        "title": "Test shopping list"
+      }]
+    }
+  }
+}
+```
+
+
+## UpdateListTitle
+
+Client -> Server
+```json
+{
+  "action": {
+    "type": "UpdateListTitle",
+    "listId": 1,
+    "title": "New title"
+  }
+}
+```
+
+Server -> Client
+```json
+{
+  "confirmAction": {
+    "type": "UpdateListTitle",
+    "data": {
+      "list": {
+        "items": [],
+        "listId": 1,
+        "title": "New title"
+      }
+    }
+  }
+}
+```
+
+## CreateItem
+
+Client -> Server
+```json
+{
+  "action": {
+    "type": "CreateItem",
+    "text": "",
+    "listId": 1
+  }
+}
+```
+
+Server -> Client
+```json
+{
+  "confirmAction": {
+    "type": "CreateItem",
+    "data": {
+      "item": {
+        "listsId": 1,
+        "text": "item for list 1",
+        "itemId": 3,
+        "completed": false
+      }
     }
   }
 }
