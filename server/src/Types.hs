@@ -55,6 +55,7 @@ instance FromJSON Item
 data Action = Register
             | GetLists
             | CreateList Text
+            | DeleteList Integer
             | UpdateListTitle Text Integer
             | CreateItem Text Integer
             | SubscribeToList Text deriving (Generic, Show)
@@ -74,6 +75,7 @@ instance FromJSON Action where
       "Register"        -> pure Register
       "GetLists"        -> pure GetLists
       "CreateList"      -> CreateList <$> action .: "title"
+      "DeleteList"      -> DeleteList <$> action .: "listId"
       "UpdateListTitle" -> UpdateListTitle <$> action .: "title" <*> action .: "listId"
       "CreateItem"      -> CreateItem <$> action .: "text" <*> action .: "listId"
       "SubscribeToList" -> SubscribeToList <$> action .: "listId"

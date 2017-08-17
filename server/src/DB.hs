@@ -44,6 +44,11 @@ insertList title' = do
   list <- query (PG.Only title') "INSERT INTO lists VALUES (DEFAULT, ?) RETURNING id, title"
   return $ listToMaybe list
 
+deleteList :: Integer -> PGTransaction ()
+deleteList listId' = do
+  _ <- execute (PG.Only listId') "DELETE FROM lists WHERE id = ?"
+  return ()
+
 updateList :: Text -> Integer -> PGTransaction (Maybe List)
 updateList newTitle id' = do
   list <- query (newTitle, id') "UPDATE lists SET title = ? WHERE id = ? RETURNING id, title"

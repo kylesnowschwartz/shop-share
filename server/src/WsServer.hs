@@ -74,6 +74,10 @@ updateState _stateMVar msg =
         CreateList title ->
           encodeIfSuccess (encodeList "CreateList") <$> runDB (insertList title)
 
+        DeleteList listId' -> do
+          runDB $ deleteList listId'
+          encodeLists <$> runDB selectAllLists
+
         UpdateListTitle newTitle id' ->
           encodeIfSuccess (encodeList "UpdateListTitle") <$> runDB (updateList newTitle id')
 

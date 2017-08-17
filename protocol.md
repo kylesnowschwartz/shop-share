@@ -75,9 +75,6 @@ Server -> Client
 
 ## CreateList
 
-* TODO: What ids should the clients give lists before they're persisted?
-  - UUIDs on the client, then DB ids after persisted
-
 Client -> Server
 ```json
 {
@@ -99,6 +96,35 @@ Server -> Client
         "listId": 12,
         "title": "New fucking list, brah!"
       }
+    }
+  }
+}
+```
+
+
+## DeleteList
+
+Client -> Server
+```json
+{
+  "action": {
+    "type": "DeleteList",
+    "listId": 9
+  }
+}
+```
+
+Server -> Client
+```json
+{
+  "confirmAction": {
+    "type": "GetLists",
+    "data": {
+      "lists": [{
+        "items": [],
+        "listId": 1,
+        "title": "Test shopping list"
+      }]
     }
   }
 }
