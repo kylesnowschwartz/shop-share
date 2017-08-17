@@ -2,7 +2,7 @@ module ShopShare exposing (Model, Msg, init, subscriptions, update, view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput)
+import Html.Events exposing (onInput, onCheck, onClick)
 import List.Extra exposing (..)
 
 
@@ -60,6 +60,8 @@ type Msg
     = ShoppingListNameEdited Int String
     | ItemAdded Int String
     | ItemEdited Int Int String
+    | ItemChecked Int Int Bool
+    | ClearCheckedItems Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -73,6 +75,17 @@ update msg model =
 
         ItemEdited updatedListId newItemId newItemText ->
             { model | shoppingLists = updateShoppingList model updatedListId (editItem newItemText newItemId) } ! []
+
+        ItemChecked updatedListId newItemId itemChecked ->
+            { model | shoppingLists = updateShoppingList model updatedListId (checkItem itemChecked newItemId) } ! []
+
+        ClearCheckedItems updatedListId ->
+            { model | shoppingLists = updateShoppingList model updatedListId (clearCheckedItems) } ! []
+
+
+clearCheckedItems : ShoppingList -> ShoppingList
+clearCheckedItems list =
+    { list | listItems = List.Extra.filterNot .completed list.listItems }
 
 
 updateName : String -> ShoppingList -> ShoppingList
@@ -95,6 +108,18 @@ editItem newItemText newItemId list =
                 item
     in
         { list | listItems = List.map applyIfEdited list.listItems }
+
+
+checkItem : Bool -> Int -> ShoppingList -> ShoppingList
+checkItem itemChecked newItemId list =
+    let
+        applyIfChecked item =
+            if item.id == newItemId then
+                { item | completed = itemChecked }
+            else
+                item
+    in
+        { list | listItems = List.map applyIfChecked list.listItems }
 
 
 incrementItemId : ShoppingList -> Int
@@ -136,8 +161,11 @@ viewShoppingList list =
             ]
             []
         , div []
-            [ ul [ class "list" ] (List.concat [ List.map (viewListItem list.id) list.listItems, [ viewAddListItem list ] ])
+            [ ul [ class "list" ]
+                (List.concat [ List.map (viewListItem list.id) list.listItems, [ viewAddListItem list ] ])
             ]
+        , div []
+            [ viewClearCheckedItems list ]
         ]
 
 
@@ -145,7 +173,7 @@ viewListItem : ShoppingListId -> ListItem -> Html Msg
 viewListItem listId item =
     li []
         [ input [ placeholder "Item name", value item.text, onInput (ItemEdited listId item.id) ] []
-        , input [ type_ "checkbox", name "list-item" ] []
+        , label [] [ input [ type_ "checkbox", checked item.completed, Html.Events.onCheck (ItemChecked listId item.id) ] [] ]
         ]
 
 
@@ -158,6 +186,11 @@ viewAddListItem list =
             ]
             []
         ]
+
+
+viewClearCheckedItems : ShoppingList -> Html Msg
+viewClearCheckedItems list =
+    button [ onClick (ClearCheckedItems list.id) ] [ text "clear checked items" ]
 
 
 subscriptions : Model -> Sub Msg
