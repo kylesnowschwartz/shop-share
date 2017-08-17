@@ -43,7 +43,7 @@ instance FromRow List where
 
 data Item =
   Item { itemId    :: Integer
-       , name      :: Text
+       , text      :: Text
        , completed :: Bool
        , listsId   :: Integer
        } deriving (Generic, Show)
@@ -55,6 +55,7 @@ instance FromJSON Item
 data Action = Register
             | GetLists
             | CreateList Text
+            | UpdateListTitle Text Integer
             | SubscribeToList Text deriving (Generic, Show)
 
 instance ToJSON Action where
@@ -72,6 +73,7 @@ instance FromJSON Action where
       "Register"        -> pure Register
       "GetLists"        -> pure GetLists
       "CreateList"      -> CreateList <$> action .: "title"
+      "UpdateListTitle" -> UpdateListTitle <$> action .: "title" <*> action .: "listId"
       "SubscribeToList" -> SubscribeToList <$> action .: "listId"
       _                 -> fail ("unknown action type: " ++ actionType)
 
@@ -99,19 +101,19 @@ encodeLists lists =
     ]
   ]
 
-encodeListCreated :: List -> LazyByteString.ByteString
-encodeListCreated list =
+encodeList :: Text -> List -> LazyByteString.ByteString
+encodeList action list =
   JSON.encode $ JSON.object
   [
     "confirmAction" .= JSON.object
-    [ "type" .= JSON.String ("CreateList" :: Text)
+    [ "type" .= JSON.String action
     , "data" .= JSON.object [ "list" .= list ]
     ]
   ]
 
-encodeIfCreated :: Maybe List -> LazyByteString.ByteString
-encodeIfCreated Nothing = encodeError $ Text.pack "Sorry, we couldn't create that list! :-("
-encodeIfCreated (Just list) = encodeListCreated list
+encodeIfSuccess :: (List -> LazyByteString.ByteString) -> Maybe List -> LazyByteString.ByteString
+encodeIfSuccess _ Nothing = encodeError $ Text.pack "Sorry, we couldn't make that change! :-("
+encodeIfSuccess encoder (Just list) = encoder list
 
 encodeError :: Text -> LazyByteString.ByteString
 encodeError err =

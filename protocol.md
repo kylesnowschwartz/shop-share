@@ -72,6 +72,7 @@ Server -> Client
 }
 ```
 
+
 ## CreateList
 
 * TODO: What ids should the clients give lists before they're persisted?
@@ -97,6 +98,36 @@ Server -> Client
         "items": [],
         "listId": 12,
         "title": "New fucking list, brah!"
+      }
+    }
+  }
+}
+```
+
+
+## UpdateListTitle
+
+Client -> Server
+```json
+{
+  "action": {
+    "type": "UpdateListTitle",
+    "listId": 1,
+    "title": "New title"
+  }
+}
+```
+
+Server -> Client
+```json
+{
+  "confirmAction": {
+    "type": "UpdateListTitle",
+    "data": {
+      "list": {
+        "items": [],
+        "listId": 1,
+        "title": "New title"
       }
     }
   }
