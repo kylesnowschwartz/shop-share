@@ -12,6 +12,11 @@ import JSON
 -- MODEL
 
 
+wsAddress : String
+wsAddress =
+    "ws://a77baf75.ngrok.io"
+
+
 init : ( Model, Cmd Msg )
 init =
     { shoppingLists =
@@ -27,7 +32,7 @@ init =
         ]
     , clientId = 0
     }
-        ! []
+        ! [ WS.send wsAddress (JSON.registerAction) ]
 
 
 
@@ -196,4 +201,4 @@ viewClearCheckedItems list =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    WS.listen "ws://89f26dac.ngrok.io" MessageReceived
+    WS.listen wsAddress MessageReceived

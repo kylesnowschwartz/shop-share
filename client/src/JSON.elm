@@ -5,6 +5,9 @@ import Json.Decode.Pipeline exposing (..)
 import Types exposing (..)
 
 
+-- DECODING
+
+
 decodeAction : String -> Result String Action
 decodeAction message =
     decodeString actionDecoder message
@@ -67,3 +70,12 @@ getListsSample =
 invalidActionSample : String
 invalidActionSample =
     "{\"confirmAction\": {\"type\": \"PoosAndWeesAndBucketsOfCheese\", \"data\": { \"clientId\": 1 }}}"
+
+
+
+-- ENCODING
+
+
+registerAction : String
+registerAction =
+    "{\"action\": {\"type\": \"Register\"}}"
