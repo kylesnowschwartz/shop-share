@@ -56,8 +56,15 @@ Server -> Client
     "data": {
       "lists": [
         {
-          "id": 1,
-          "title": "Test shopping list"
+          "listId": 1,
+          "title": "Test shopping list",
+          "items": [
+            {
+              "itemId": 1,
+              "text": "Get some Haskell down ya",
+              "completed": false
+            }
+          ]
         }
       ]
     }

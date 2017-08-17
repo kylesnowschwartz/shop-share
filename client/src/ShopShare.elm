@@ -1,38 +1,15 @@
-module ShopShare exposing (Model, Msg, init, subscriptions, update, view)
+module ShopShare exposing (Msg, init, subscriptions, update, view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onCheck, onClick)
 import List.Extra exposing (..)
+import WebSocket as WS
+import Types exposing (..)
+import JSON
 
 
 -- MODEL
-
-
-type alias Model =
-    { shoppingLists : List ShoppingList }
-
-
-type alias ShoppingList =
-    { id : ShoppingListId
-    , name : String
-    , listItems : List ListItem
-    }
-
-
-type alias ShoppingListId =
-    Int
-
-
-type alias ItemId =
-    Int
-
-
-type alias ListItem =
-    { id : ItemId
-    , text : String
-    , completed : Bool
-    }
 
 
 init : ( Model, Cmd Msg )
@@ -48,6 +25,7 @@ init =
                 ]
           }
         ]
+    , clientId = 0
     }
         ! []
 
@@ -62,6 +40,7 @@ type Msg
     | ItemEdited Int Int String
     | ItemChecked Int Int Bool
     | ClearCheckedItems Int
+    | MessageReceived String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -81,6 +60,28 @@ update msg model =
 
         ClearCheckedItems updatedListId ->
             { model | shoppingLists = updateShoppingList model updatedListId (clearCheckedItems) } ! []
+
+        MessageReceived message ->
+            handleMessage model message ! []
+
+
+handleMessage : Model -> String -> Model
+handleMessage model message =
+    case JSON.decodeAction message of
+        Ok action ->
+            case action of
+                Register newId ->
+                    { model | clientId = newId }
+
+                GetLists lists ->
+                    { model | shoppingLists = lists }
+
+                CreateList list ->
+                    model
+
+        -- TODO: Really need to return all the lists from CreateList
+        Err err ->
+            model
 
 
 clearCheckedItems : ShoppingList -> ShoppingList
@@ -195,4 +196,4 @@ viewClearCheckedItems list =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    WS.listen "ws://89f26dac.ngrok.io" MessageReceived
