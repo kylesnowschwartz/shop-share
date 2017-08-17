@@ -19,16 +19,34 @@ enum ClientAction {
     }
 
 }
-//
-//enum Server {
-//    case register(response : RegisterResponse)
-//    case error(error : SocketError)
-//}
-//
-//struct RegisterResponse {
-//
-//}
-//
+
+enum ServerAction {
+    case registered(ServerResponse)
+
+    static let decoder = JSONDecoder()
+
+    static func fromJSON(_ json: Data) -> Result<ServerAction> {
+        if let response = try? decoder.decode(ServerResponse.self, from: json) {
+            return .success(.registered(response))
+        }
+        return .error("Cannot get confirm action from data")
+    }
+}
+
+struct ServerResponse : Decodable {
+
+    struct ConfirmAction : Decodable {
+
+        let type : String
+
+        struct Data : Decodable {
+
+            let clientId : Int
+        }
+    }
+
+}
+
 //struct SocketError {
 //
 //}

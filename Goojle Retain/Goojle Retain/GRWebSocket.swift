@@ -9,7 +9,7 @@
 import Foundation
 import Starscream
 
-class GRWebSocket : WebSocketDelegate {
+class GRWebSocket : WebSocketDelegate, GRWebSocketDelegateProtocol {
 
     static let shared = GRWebSocket()
 
@@ -24,6 +24,13 @@ class GRWebSocket : WebSocketDelegate {
         let string = action.toJSONString()
         print("Sending : \(string)")
         socket.write(string: string)
+    }
+
+    func received(_ action: ServerAction) {
+        switch action {
+        case .registered(_):
+            print("Successfully registered!")
+        }
     }
 
     internal let socket : WebSocket
@@ -42,13 +49,16 @@ class GRWebSocket : WebSocketDelegate {
     }
 
     func websocketDidReceiveMessage(socket: WebSocket, text: String) {
-        guard let data = text.data(using: .utf8),
-            let jsonData = try? JSONSerialization.jsonObject(with: data) else {
-
-                return
+        guard let data = text.data(using: .utf8) else {
+            return
         }
 
-        dump(jsonData)
+        switch ServerAction.fromJSON(data) {
+        case .success(let action):
+            received(action)
+        case .error(let error):
+            print(error)
+        }
     }
 }
 

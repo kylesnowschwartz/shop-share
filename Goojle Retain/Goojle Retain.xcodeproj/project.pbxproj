@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0151ACF551A37D4E785C04F8 /* Pods_Goojle_Retain.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CCF64A8584E19A310D328221 /* Pods_Goojle_Retain.framework */; };
-		813BBAD71F454EAC00C9169D /* WebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 813BBAD61F454EAC00C9169D /* WebSocket.swift */; };
+		813BBAD71F454EAC00C9169D /* GRWebSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 813BBAD61F454EAC00C9169D /* GRWebSocket.swift */; };
 		813BBAD91F45527400C9169D /* Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 813BBAD81F45527400C9169D /* Actions.swift */; };
 		81A8135E1F454E3A003AE839 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A8135D1F454E3A003AE839 /* AppDelegate.swift */; };
 		81A813601F454E3A003AE839 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81A8135F1F454E3A003AE839 /* ViewController.swift */; };
@@ -16,11 +16,13 @@
 		81A813661F454E3A003AE839 /* Goojle_Retain.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 81A813641F454E3A003AE839 /* Goojle_Retain.xcdatamodeld */; };
 		81A813681F454E3A003AE839 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 81A813671F454E3A003AE839 /* Assets.xcassets */; };
 		81A8136B1F454E3A003AE839 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81A813691F454E3A003AE839 /* LaunchScreen.storyboard */; };
+		AFFC97991F46476000AAEDF8 /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC97981F46476000AAEDF8 /* Result.swift */; };
+		AFFC979B1F46489200AAEDF8 /* GRWebSocketDelegateProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFC979A1F46489200AAEDF8 /* GRWebSocketDelegateProtocol.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		109459E273EBC6BCECA2C759 /* Pods-Goojle Retain.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Goojle Retain.release.xcconfig"; path = "Pods/Target Support Files/Pods-Goojle Retain/Pods-Goojle Retain.release.xcconfig"; sourceTree = "<group>"; };
-		813BBAD61F454EAC00C9169D /* WebSocket.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebSocket.swift; sourceTree = "<group>"; };
+		813BBAD61F454EAC00C9169D /* GRWebSocket.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GRWebSocket.swift; sourceTree = "<group>"; };
 		813BBAD81F45527400C9169D /* Actions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
 		81A8135A1F454E3A003AE839 /* Goojle Retain.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Goojle Retain.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		81A8135D1F454E3A003AE839 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -30,6 +32,8 @@
 		81A813671F454E3A003AE839 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		81A8136A1F454E3A003AE839 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		81A8136C1F454E3A003AE839 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AFFC97981F46476000AAEDF8 /* Result.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Result.swift; sourceTree = "<group>"; };
+		AFFC979A1F46489200AAEDF8 /* GRWebSocketDelegateProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GRWebSocketDelegateProtocol.swift; sourceTree = "<group>"; };
 		C54FB1BC2A1D0E239E6E4BA5 /* Pods-Goojle Retain.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Goojle Retain.debug.xcconfig"; path = "Pods/Target Support Files/Pods-Goojle Retain/Pods-Goojle Retain.debug.xcconfig"; sourceTree = "<group>"; };
 		CCF64A8584E19A310D328221 /* Pods_Goojle_Retain.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Goojle_Retain.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -83,8 +87,10 @@
 				81A813691F454E3A003AE839 /* LaunchScreen.storyboard */,
 				81A8136C1F454E3A003AE839 /* Info.plist */,
 				81A813641F454E3A003AE839 /* Goojle_Retain.xcdatamodeld */,
-				813BBAD61F454EAC00C9169D /* WebSocket.swift */,
+				813BBAD61F454EAC00C9169D /* GRWebSocket.swift */,
 				813BBAD81F45527400C9169D /* Actions.swift */,
+				AFFC97981F46476000AAEDF8 /* Result.swift */,
+				AFFC979A1F46489200AAEDF8 /* GRWebSocketDelegateProtocol.swift */,
 			);
 			path = "Goojle Retain";
 			sourceTree = "<group>";
@@ -221,9 +227,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AFFC97991F46476000AAEDF8 /* Result.swift in Sources */,
 				813BBAD91F45527400C9169D /* Actions.swift in Sources */,
 				81A813601F454E3A003AE839 /* ViewController.swift in Sources */,
-				813BBAD71F454EAC00C9169D /* WebSocket.swift in Sources */,
+				AFFC979B1F46489200AAEDF8 /* GRWebSocketDelegateProtocol.swift in Sources */,
+				813BBAD71F454EAC00C9169D /* GRWebSocket.swift in Sources */,
 				81A8135E1F454E3A003AE839 /* AppDelegate.swift in Sources */,
 				81A813661F454E3A003AE839 /* Goojle_Retain.xcdatamodeld in Sources */,
 			);
