@@ -31,6 +31,7 @@ init =
           }
         ]
     , clientId = Nothing
+    , errorMessage = Nothing
     }
         ! [ WS.send wsAddress (JSON.registerAction) ]
 
@@ -67,26 +68,26 @@ update msg model =
             { model | shoppingLists = updateShoppingList model updatedListId (clearCheckedItems) } ! []
 
         MessageReceived message ->
-            handleMessage model message ! []
+            handleMessage model message
 
 
-handleMessage : Model -> String -> Model
+handleMessage : Model -> String -> ( Model, Cmd Msg )
 handleMessage model message =
     case JSON.decodeAction message of
         Ok action ->
             case action of
                 Register newId ->
-                    { model | clientId = Just newId }
+                    { model | clientId = Just newId } ! [ WS.send wsAddress JSON.getListsAction ]
 
                 GetLists lists ->
-                    { model | shoppingLists = lists }
+                    { model | shoppingLists = (Debug.log "lists: " lists) } ! []
 
                 CreateList list ->
-                    model
+                    model ! []
 
         -- TODO: Really need to return all the lists from CreateList
         Err err ->
-            model
+            { model | errorMessage = Just err } ! []
 
 
 clearCheckedItems : ShoppingList -> ShoppingList
@@ -153,9 +154,15 @@ view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "Hello shop share!" ]
+        , viewErrors model
         , viewClientId model
         , ol [ id "lists" ] (List.map viewShoppingList model.shoppingLists)
         ]
+
+
+viewErrors : Model -> Html Msg
+viewErrors model =
+    div [] [ text (Maybe.withDefault "" model.errorMessage) ]
 
 
 viewClientId : Model -> Html Msg

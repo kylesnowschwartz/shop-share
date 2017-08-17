@@ -4,6 +4,7 @@ module Types exposing (..)
 type alias Model =
     { shoppingLists : List ShoppingList
     , clientId : Maybe ClientId
+    , errorMessage : Maybe String
     }
 
 

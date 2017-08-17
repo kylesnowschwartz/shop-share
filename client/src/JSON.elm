@@ -79,3 +79,8 @@ invalidActionSample =
 registerAction : String
 registerAction =
     "{\"action\": {\"type\": \"Register\"}}"
+
+
+getListsAction : String
+getListsAction =
+    "{\"action\": {\"type\": \"GetLists\"}}"
