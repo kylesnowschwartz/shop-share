@@ -22,7 +22,7 @@ wsApp :: MVar State -> WS.ServerApp
 wsApp stateMVar pending = do
   connection <- WS.acceptRequest pending
   WS.forkPingThread connection 30
-  msg <- WS.receiveData connection -- Should we be using receiveDataMessage here?
+  msg <- WS.receiveData connection
   state <- readMVar stateMVar
 
   let client = Client (nextClientId state) connection
@@ -72,7 +72,7 @@ updateState _stateMVar msg =
           encodeLists <$> runDB selectAllLists
 
         CreateList title ->
-          return $ encodeListCreated (List 1 title)
+          encodeIfCreated <$> runDB (insertList title)
 
         _ ->
           return $ encodeError $ Text.pack "Action not yet built. Sorry! Come back later :-)"

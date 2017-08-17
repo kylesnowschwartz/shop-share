@@ -92,9 +92,12 @@ Server -> Client
 {
   "confirmAction": {
     "type": "CreateList",
-    "list": {
-      "listId": 1,
-      "title": "foo"
+    "data": {
+      "list": {
+        "items": [],
+        "listId": 12,
+        "title": "New fucking list, brah!"
+      }
     }
   }
 }

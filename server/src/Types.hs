@@ -3,17 +3,19 @@
 
 module Types where
 
-import           Data.Aeson                    (FromJSON, ToJSON, (.:), (.=))
-import qualified Data.Aeson                    as JSON
-import           Data.ByteString               (ByteString)
-import qualified Data.ByteString.Lazy.Internal as LazyByteString
-import           Data.Semigroup                ((<>))
-import           Data.Set                      as Set
-import           Data.Text                     (Text)
-import qualified Data.Text                     as Text
-import           Database.PostgreSQL.Simple    (FromRow)
-import           GHC.Generics                  (Generic)
-import           Network.WebSockets            (Connection)
+import           Data.Aeson                         (FromJSON, ToJSON, (.:),
+                                                     (.=))
+import qualified Data.Aeson                         as JSON
+import           Data.ByteString                    (ByteString)
+import qualified Data.ByteString.Lazy.Internal      as LazyByteString
+import           Data.Semigroup                     ((<>))
+import           Data.Set                           as Set
+import           Data.Text                          (Text)
+import qualified Data.Text                          as Text
+import           Database.PostgreSQL.Simple         (FromRow)
+import           Database.PostgreSQL.Simple.FromRow
+import           GHC.Generics                       (Generic)
+import           Network.WebSockets                 (Connection)
 
 newtype Config = Config { port :: Int }
 
@@ -28,13 +30,27 @@ instance Ord Client where
   compare (Client id1 _) (Client id2 _) = compare id1 id2
 
 data List =
-  List { id    :: Integer
-       , title :: Text
+  List { listId :: Integer
+       , title  :: Text
+       , items  :: [Item]
        } deriving (Generic, Show)
 
-instance FromRow List
 instance ToJSON List
 instance FromJSON List
+
+instance FromRow List where
+  fromRow = List <$> field <*> field <*> pure []
+
+data Item =
+  Item { itemId    :: Integer
+       , name      :: Text
+       , completed :: Bool
+       , listsId   :: Integer
+       } deriving (Generic, Show)
+
+instance FromRow Item
+instance ToJSON Item
+instance FromJSON Item
 
 data Action = Register
             | GetLists
@@ -55,8 +71,8 @@ instance FromJSON Action where
     case actionType of
       "Register"        -> pure Register
       "GetLists"        -> pure GetLists
-      "CreateList"      -> CreateList <$> obj .: "title"
-      "SubscribeToList" -> SubscribeToList <$> obj .: "listId"
+      "CreateList"      -> CreateList <$> action .: "title"
+      "SubscribeToList" -> SubscribeToList <$> action .: "listId"
       _                 -> fail ("unknown action type: " ++ actionType)
 
 decodeAction :: ByteString -> Either String Action
@@ -92,6 +108,10 @@ encodeListCreated list =
     , "data" .= JSON.object [ "list" .= list ]
     ]
   ]
+
+encodeIfCreated :: Maybe List -> LazyByteString.ByteString
+encodeIfCreated Nothing = encodeError $ Text.pack "Sorry, we couldn't create that list! :-("
+encodeIfCreated (Just list) = encodeListCreated list
 
 encodeError :: Text -> LazyByteString.ByteString
 encodeError err =
