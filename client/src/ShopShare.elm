@@ -3,6 +3,7 @@ module ShopShare exposing (Model, Msg, init, subscriptions, update, view)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
+import List.Extra exposing (..)
 
 
 -- MODEL
@@ -23,8 +24,13 @@ type alias ShoppingListId =
     Int
 
 
+type alias ItemId =
+    Int
+
+
 type alias ListItem =
-    { text : String
+    { id : ItemId
+    , text : String
     , completed : Bool
     }
 
@@ -32,10 +38,11 @@ type alias ListItem =
 init : ( Model, Cmd Msg )
 init =
     { shoppingLists =
-        [ { id = 0
-          , name = ""
+        [ { id = 1
+          , name = "Groceries"
           , listItems =
-                [ { text = ""
+                [ { id = 1
+                  , text = "Apples"
                   , completed = False
                   }
                 ]
@@ -51,29 +58,60 @@ init =
 
 type Msg
     = ShoppingListNameEdited Int String
-    | ItemAdded
-    | ItemTextEdited
+    | ItemAdded Int String
+    | ItemEdited Int Int String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ShoppingListNameEdited updatedId newName ->
-            { model | shoppingLists = List.map (updateName updatedId newName) model.shoppingLists } ! []
+        ShoppingListNameEdited updatedListId newName ->
+            { model | shoppingLists = updateShoppingList model updatedListId (updateName newName) } ! []
 
-        ItemAdded ->
-            model ! []
+        ItemAdded updatedListId newItem ->
+            { model | shoppingLists = updateShoppingList model updatedListId (addItem newItem) } ! []
 
-        ItemTextEdited ->
-            model ! []
+        ItemEdited updatedListId newItemId newItemText ->
+            { model | shoppingLists = updateShoppingList model updatedListId (editItem newItemText newItemId) } ! []
 
 
-updateName : ShoppingListId -> String -> ShoppingList -> ShoppingList
-updateName updatedId newName list =
-    if list.id == updatedId then
-        { list | name = newName }
-    else
-        list
+updateName : String -> ShoppingList -> ShoppingList
+updateName newName list =
+    { list | name = newName }
+
+
+addItem : String -> ShoppingList -> ShoppingList
+addItem newItem list =
+    { list | listItems = list.listItems ++ [ { id = (incrementItemId list), text = newItem, completed = False } ] }
+
+
+editItem : String -> Int -> ShoppingList -> ShoppingList
+editItem newItemText newItemId list =
+    let
+        applyIfEdited item =
+            if item.id == newItemId then
+                { item | text = newItemText }
+            else
+                item
+    in
+        { list | listItems = List.map applyIfEdited list.listItems }
+
+
+incrementItemId : ShoppingList -> Int
+incrementItemId list =
+    Maybe.withDefault 0 (List.maximum (List.map .id list.listItems)) + 1
+
+
+updateShoppingList : Model -> ShoppingListId -> (ShoppingList -> ShoppingList) -> List ShoppingList
+updateShoppingList model updatedId updateFunction =
+    let
+        filteredUpdate list =
+            if list.id == updatedId then
+                updateFunction list
+            else
+                list
+    in
+        List.map filteredUpdate model.shoppingLists
 
 
 
@@ -98,16 +136,27 @@ viewShoppingList list =
             ]
             []
         , div []
-            [ ul [ class "list" ] (List.map viewListItem list.listItems)
+            [ ul [ class "list" ] (List.concat [ List.map (viewListItem list.id) list.listItems, [ viewAddListItem list ] ])
             ]
         ]
 
 
-viewListItem : ListItem -> Html Msg
-viewListItem item =
+viewListItem : ShoppingListId -> ListItem -> Html Msg
+viewListItem listId item =
     li []
-        [ input [ placeholder "Item name" ] []
-        , input [ type_ "checkbox", name "list-item", value item.text ] []
+        [ input [ placeholder "Item name", value item.text, onInput (ItemEdited listId item.id) ] []
+        , input [ type_ "checkbox", name "list-item" ] []
+        ]
+
+
+viewAddListItem : ShoppingList -> Html Msg
+viewAddListItem list =
+    li []
+        [ input
+            [ placeholder "Add a new list item"
+            , onInput (ItemAdded list.id)
+            ]
+            []
         ]
 
 
