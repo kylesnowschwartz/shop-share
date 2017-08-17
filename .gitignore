@@ -16,5 +16,5 @@ TAGS
 \#*\#
 
 # .xcodeproj bullshit
-swift-client/Goojle\ Retain/Pods/
-swift-client/Goojle\ Retain/Podfile.lock
+Goojle\ Retain/Pods/
+Goojle\ Retain/Podfile.lock
