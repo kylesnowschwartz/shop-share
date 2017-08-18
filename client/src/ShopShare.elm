@@ -43,11 +43,12 @@ init =
 type Msg
     = ShoppingListTitleEdited Int String
     | CreateNewList
-    | ItemAdded Int
-    | ItemEdited Int Int String
-    | ItemChecked Int Int Bool
-    | ItemDeleted Int ListItem
-    | ClearCheckedItems Int
+    | DeleteList ShoppingList
+    | ItemAdded ShoppingListId
+    | ItemEdited ShoppingListId ItemId String
+    | ItemChecked ShoppingListId ItemId Bool
+    | ItemDeleted ShoppingListId ListItem
+    | ClearCheckedItems ShoppingListId
     | MessageReceived String
 
 
@@ -57,11 +58,14 @@ update msg model =
         CreateNewList ->
             { model | shoppingLists = addList model.shoppingLists } ! [ WS.send wsAddress JSON.createListAction ]
 
+        DeleteList list ->
+            { model | shoppingLists = List.Extra.remove list model.shoppingLists } ! [ WS.send wsAddress (JSON.deleteListAction list) ]
+
         ShoppingListTitleEdited updatedListId newTitle ->
             { model | shoppingLists = updateShoppingList model updatedListId (updateTitle newTitle) } ! [ WS.send wsAddress (JSON.editListTitleAction updatedListId newTitle) ]
 
         ItemAdded updatedListId ->
-            { model | shoppingLists = updateShoppingList model updatedListId (addItem "") } ! []
+            { model | shoppingLists = updateShoppingList model updatedListId (addItem "") } ! [ WS.send wsAddress (JSON.addListItemAction updatedListId) ]
 
         ItemEdited updatedListId newItemId newItemText ->
             { model | shoppingLists = updateShoppingList model updatedListId (editItem newItemText newItemId) } ! []
@@ -91,10 +95,16 @@ handleMessage model message =
                     { model | shoppingLists = (Debug.log "lists: " lists) } ! []
 
                 CreateList _ ->
-                    model ! [ WS.send wsAddress JSON.getListsAction ]
+                    model ! []
+
+                DeleteShoppingList _ ->
+                    model ! []
 
                 EditListTitle _ ->
-                    model ! [ WS.send wsAddress JSON.getListsAction ]
+                    model ! []
+
+                AddListItem _ ->
+                    model ! []
 
         -- TODO: Really need to return all the lists from CreateList
         Err err ->
@@ -213,6 +223,7 @@ viewShoppingList list =
             , value list.title
             ]
             []
+        , a [ tabindex -1, class "delete is-small", onClick (DeleteList list) ] []
         , div []
             [ dl [ class "list" ]
                 (List.concat [ List.map (viewListItem list.id) list.listItems, [ viewAddListItem list ] ])
@@ -228,7 +239,7 @@ viewListItem listId item =
         [ input [ tabindex 2, placeholder "Item name", value item.text, onInput (ItemEdited listId item.id) ] []
         , label [ class "checkbox" ]
             [ input [ type_ "checkbox", checked item.completed, Html.Events.onCheck (ItemChecked listId item.id) ] [] ]
-        , button [ tabindex -1, class "delete is-small", onClick (ItemDeleted listId item) ] []
+        , a [ tabindex -1, class "delete is-small", onClick (ItemDeleted listId item) ] []
         ]
 
 

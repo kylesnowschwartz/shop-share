@@ -30,7 +30,9 @@ type Action
     = Register ClientId
     | GetLists (List ShoppingList)
     | CreateList ShoppingList
+    | DeleteShoppingList ShoppingList
     | EditListTitle ShoppingList
+    | AddListItem ListItem
 
 
 type alias ShoppingListId =
