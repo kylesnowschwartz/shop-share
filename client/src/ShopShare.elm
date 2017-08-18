@@ -85,32 +85,36 @@ update msg model =
 
 handleMessage : Model -> String -> ( Model, Cmd Msg )
 handleMessage model message =
-    case JSON.decodeAction message of
-        Ok action ->
-            case action of
-                Register newId ->
-                    { model | clientId = Just newId } ! [ WS.send wsAddress JSON.getListsAction ]
+    let
+        fetchAllLists =
+            model ! [ WS.send wsAddress JSON.getListsAction ]
+    in
+        case JSON.decodeAction message of
+            Ok action ->
+                case action of
+                    Register newId ->
+                        { model | clientId = Just newId } ! [ WS.send wsAddress JSON.getListsAction ]
 
-                GetLists lists ->
-                    { model | shoppingLists = List.sortBy .id lists } ! []
+                    GetLists lists ->
+                        { model | shoppingLists = List.sortBy .id lists } ! []
 
-                CreateList newList ->
-                    model ! [ WS.send wsAddress JSON.getListsAction ]
+                    CreateList newList ->
+                        fetchAllLists
 
-                DeleteShoppingList _ ->
-                    model ! [ WS.send wsAddress JSON.getListsAction ]
+                    DeleteShoppingList _ ->
+                        fetchAllLists
 
-                EditListTitle _ ->
-                    model ! [ WS.send wsAddress JSON.getListsAction ]
+                    EditListTitle _ ->
+                        fetchAllLists
 
-                AddListItem _ ->
-                    model ! [ WS.send wsAddress JSON.getListsAction ]
+                    AddListItem _ ->
+                        fetchAllLists
 
-                UpdateItemText _ ->
-                    model ! [ WS.send wsAddress JSON.getListsAction ]
+                    UpdateItemText _ ->
+                        fetchAllLists
 
-        Err err ->
-            { model | errorMessage = Just err } ! []
+            Err err ->
+                { model | errorMessage = Just err } ! []
 
 
 clearCheckedItems : ShoppingList -> ShoppingList
