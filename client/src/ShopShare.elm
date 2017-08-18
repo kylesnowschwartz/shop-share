@@ -109,7 +109,6 @@ handleMessage model message =
                 UpdateItemText _ ->
                     model ! [ WS.send wsAddress JSON.getListsAction ]
 
-        -- TODO: Really need to return all the lists from CreateList
         Err err ->
             { model | errorMessage = Just err } ! []
 
