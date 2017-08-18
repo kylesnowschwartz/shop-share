@@ -34,7 +34,7 @@ class GRWebSocket : WebSocketDelegate, GRWebSocketDelegateProtocol {
     }
 
     internal let socket : WebSocket
-    internal let url = URL(string: "ws://afebe343.ngrok.io")!
+    internal let url = URL(string: "ws://localhost:8000")!
 
     func websocketDidConnect(socket: WebSocket) {
         print("Websocket connected")
