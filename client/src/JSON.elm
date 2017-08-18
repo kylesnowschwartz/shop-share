@@ -8,83 +8,83 @@ import Types exposing (..)
 -- DECODING
 
 
-decodeAction : String -> Result String Action
-decodeAction message =
-    decodeString actionDecoder message
+decodeEvent : String -> Result String Event
+decodeEvent message =
+    decodeString eventDecoder message
 
 
-actionDecoder : Decoder Action
-actionDecoder =
+eventDecoder : Decoder Event
+eventDecoder =
     (at [ "confirmAction", "type" ] string)
         |> andThen
             (\type_ ->
                 case type_ of
                     "Register" ->
-                        decodeRegister
+                        decodeRegisteredEvent
 
                     "GetLists" ->
-                        decodeGetLists
+                        decodeGotListsEvent
 
                     "CreateList" ->
-                        decodeCreateList
+                        decodeCreatedListEvent
 
                     "UpdateListTitle" ->
-                        decodeEditListTitle
+                        decodeUpdatedListTitleEvent
 
                     "DeleteList" ->
-                        decodeDeleteList
+                        decodeDeletedListEvent
 
                     "CreateItem" ->
-                        decodeAddItem
+                        decodeCreatedItemEvent
 
                     "UpdateItemText" ->
-                        decodeUpdateItem
+                        decodeUpdatedItemTextEvent
 
                     other ->
                         fail <| "Unknown action received from server: " ++ other
             )
 
 
-decodeRegister : Decoder Action
-decodeRegister =
-    map Register
+decodeRegisteredEvent : Decoder Event
+decodeRegisteredEvent =
+    map Registered
         (at [ "confirmAction", "data", "clientId" ] int)
 
 
-decodeGetLists : Decoder Action
-decodeGetLists =
-    map GetLists
+decodeGotListsEvent : Decoder Event
+decodeGotListsEvent =
+    map GotLists
         (at [ "confirmAction", "data", "lists" ] (list decodeShoppingList))
 
 
-decodeCreateList : Decoder Action
-decodeCreateList =
-    map CreateList
+decodeCreatedListEvent : Decoder Event
+decodeCreatedListEvent =
+    map CreatedList
         (at [ "confirmAction", "data", "list" ] (decodeShoppingList))
 
 
-decodeDeleteList : Decoder Action
-decodeDeleteList =
-    map DeleteShoppingList
+decodeDeletedListEvent : Decoder Event
+decodeDeletedListEvent =
+    map DeletedList
         (at [ "confirmAction", "data", "list" ] (decodeShoppingList))
 
 
-decodeEditListTitle : Decoder Action
-decodeEditListTitle =
-    map EditListTitle
+decodeUpdatedListTitleEvent : Decoder Event
+decodeUpdatedListTitleEvent =
+    map UpdatedListTitle
         (at [ "confirmAction", "data", "list" ] (decodeShoppingList))
 
 
-decodeAddItem : Decoder Action
-decodeAddItem =
-    map AddListItem
-        (at [ "confirmAction", "data", "item" ] (decodeListItem))
+decodeCreatedItemEvent : Decoder Event
+decodeCreatedItemEvent =
+    map CreatedItem
+        (at [ "confirmAction", "data", "item" ] (decodeItem))
 
 
-decodeUpdateItem : Decoder Action
-decodeUpdateItem =
-    map UpdateItemText
-        (at [ "confirmAction", "data", "item" ] (decodeListItem))
+decodeUpdatedItemTextEvent : Decoder Event
+decodeUpdatedItemTextEvent =
+    map UpdatedItemText
+        (at [ "confirmAction", "data", "item" ] (decodeItem))
 
 
 decodeShoppingList : Decoder ShoppingList
@@ -92,12 +92,12 @@ decodeShoppingList =
     decode ShoppingList
         |> required "listId" int
         |> required "title" string
-        |> required "items" (list decodeListItem)
+        |> required "items" (list decodeItem)
 
 
-decodeListItem : Decoder ListItem
-decodeListItem =
-    decode ListItem
+decodeItem : Decoder Item
+decodeItem =
+    decode Item
         |> required "itemId" int
         |> required "text" string
         |> required "completed" bool
@@ -137,13 +137,13 @@ createListAction =
     "{\"action\": {\"type\": \"CreateList\", \"title\": \"\"}}"
 
 
-addListItemAction : ShoppingListId -> String
-addListItemAction listId =
+addItemAction : ShoppingListId -> String
+addItemAction listId =
     "{\"action\": {\"type\": \"CreateItem\", \"text\": \"\", \"listId\": " ++ toString listId ++ "}}"
 
 
-editListItemAction : ShoppingListId -> ItemId -> String -> String
-editListItemAction listId itemId newName =
+editItemAction : ShoppingListId -> ItemId -> String -> String
+editItemAction listId itemId newName =
     "{\"action\": {\"type\": \"UpdateItemText\", \"text\": \"" ++ newName ++ "\", \"itemId\": " ++ toString itemId ++ ",\"listId\": " ++ toString listId ++ "}}"
 
 

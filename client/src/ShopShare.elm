@@ -47,7 +47,7 @@ type Msg
     | ItemAdded ShoppingListId
     | ItemEdited ShoppingListId ItemId String
     | ItemChecked ShoppingListId ItemId Bool
-    | ItemDeleted ShoppingListId ListItem
+    | ItemDeleted ShoppingListId Item
     | ClearCheckedItems ShoppingListId
     | MessageReceived String
 
@@ -65,10 +65,10 @@ update msg model =
             { model | shoppingLists = updateShoppingList model updatedListId (updateTitle newTitle) } ! [ WS.send wsAddress (JSON.editListTitleAction updatedListId newTitle) ]
 
         ItemAdded updatedListId ->
-            { model | shoppingLists = updateShoppingList model updatedListId (addItem "") } ! [ WS.send wsAddress (JSON.addListItemAction updatedListId) ]
+            { model | shoppingLists = updateShoppingList model updatedListId (addItem "") } ! [ WS.send wsAddress (JSON.addItemAction updatedListId) ]
 
         ItemEdited updatedListId newItemId newItemText ->
-            { model | shoppingLists = updateShoppingList model updatedListId (editItem newItemText newItemId) } ! [ WS.send wsAddress (JSON.editListItemAction updatedListId newItemId newItemText) ]
+            { model | shoppingLists = updateShoppingList model updatedListId (editItem newItemText newItemId) } ! [ WS.send wsAddress (JSON.editItemAction updatedListId newItemId newItemText) ]
 
         ItemChecked updatedListId newItemId itemChecked ->
             { model | shoppingLists = updateShoppingList model updatedListId (checkItem itemChecked newItemId) } ! []
@@ -89,28 +89,28 @@ handleMessage model message =
         fetchAllLists =
             model ! [ WS.send wsAddress JSON.getListsAction ]
     in
-        case JSON.decodeAction message of
+        case JSON.decodeEvent message of
             Ok action ->
                 case action of
-                    Register newId ->
+                    Registered newId ->
                         { model | clientId = Just newId } ! [ WS.send wsAddress JSON.getListsAction ]
 
-                    GetLists lists ->
+                    GotLists lists ->
                         { model | shoppingLists = List.sortBy .id lists } ! []
 
-                    CreateList newList ->
+                    CreatedList newList ->
                         fetchAllLists
 
-                    DeleteShoppingList _ ->
+                    DeletedList _ ->
                         fetchAllLists
 
-                    EditListTitle _ ->
+                    UpdatedListTitle _ ->
                         fetchAllLists
 
-                    AddListItem _ ->
+                    CreatedItem _ ->
                         fetchAllLists
 
-                    UpdateItemText _ ->
+                    UpdatedItemText _ ->
                         fetchAllLists
 
             Err err ->
@@ -161,7 +161,7 @@ checkItem itemChecked newItemId list =
         { list | listItems = List.map applyIfChecked list.listItems }
 
 
-deleteItem : ListItem -> ShoppingList -> ShoppingList
+deleteItem : Item -> ShoppingList -> ShoppingList
 deleteItem deletedItem list =
     { list | listItems = List.Extra.remove deletedItem list.listItems }
 
@@ -239,7 +239,7 @@ viewShoppingList list =
         ]
 
 
-viewListItem : ShoppingListId -> ListItem -> Html Msg
+viewListItem : ShoppingListId -> Item -> Html Msg
 viewListItem listId item =
     dd []
         [ input [ tabindex 2, placeholder "Item name", value item.text, onInput (ItemEdited listId item.id) ] []

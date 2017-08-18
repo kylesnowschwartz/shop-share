@@ -11,11 +11,11 @@ type alias Model =
 type alias ShoppingList =
     { id : ShoppingListId
     , title : String
-    , listItems : List ListItem
+    , listItems : List Item
     }
 
 
-type alias ListItem =
+type alias Item =
     { id : ItemId
     , text : String
     , completed : Bool
@@ -26,14 +26,14 @@ type alias Group =
     { id : GroupId }
 
 
-type Action
-    = Register ClientId
-    | GetLists (List ShoppingList)
-    | CreateList ShoppingList
-    | DeleteShoppingList ShoppingList
-    | EditListTitle ShoppingList
-    | AddListItem ListItem
-    | UpdateItemText ListItem
+type Event
+    = Registered ClientId
+    | GotLists (List ShoppingList)
+    | CreatedList ShoppingList
+    | DeletedList ShoppingList
+    | UpdatedListTitle ShoppingList
+    | CreatedItem Item
+    | UpdatedItemText Item
 
 
 type alias ShoppingListId =
