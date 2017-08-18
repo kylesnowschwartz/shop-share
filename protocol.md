@@ -190,9 +190,38 @@ Server -> Client
 }
 ```
 
-# TODO:
-## Broadcast updates to all clients
 ## UpdateItemText
+
+Client -> Server
+```json
+{
+  "action": {
+    "type": "UpdateItemText",
+    "text": "foo bar",
+    "itemId": 1
+  }
+}
+```
+
+Server -> Client
+```json
+{
+  "confirmAction": {
+    "type": "UpdateItemText",
+    "data": {
+      "item": {
+        "listsId": 1,
+        "text": "foo bar",
+        "itemId": 1,
+        "completed": false
+      }
+    }
+  }
+}
+```
+
+
+# TODO:
 ## CompleteItem
 ## UncompleteItem
 ## DeleteItem
