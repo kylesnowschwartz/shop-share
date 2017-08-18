@@ -14,6 +14,7 @@ import qualified Data.Set                      as Set
 import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 import           DB
+import           Debug.Trace
 import qualified Network.WebSockets            as WS
 import           Types
 
@@ -38,8 +39,11 @@ wsApp stateMVar pending = do
     Left err -> WS.sendTextData connection $ encodeError $ Text.pack err
 
 nextClientId :: State -> Integer
-nextClientId _state =
-  1
+nextClientId state =
+  if Set.null cs
+  then 1
+  else clientId (Set.findMax cs) + 1
+  where cs = clients state
 
 connect :: MVar State -> Client -> IO ()
 connect stateMVar client@Client{..} = do
@@ -51,17 +55,14 @@ disconnect stateMVar client =
   modifyMVar_ stateMVar $ updateClients Set.delete client
 
 talk :: MVar State -> Client -> IO ()
-talk stateMVar Client{..} = forever $ do
-  response <- WS.receiveData conn >>= updateState stateMVar
-  WS.sendTextData conn response
+talk stateMVar client = forever $ do
+  response <- WS.receiveData (conn client) >>= updateState client stateMVar
+  state <- readMVar stateMVar
+  forM_ (clients state) $ \c ->
+    WS.sendTextData (conn c) response
 
-broadcast :: State -> IO ()
-broadcast state =
-  forM_ (clients state) $ \client ->
-    WS.sendTextData (conn client) $ encodeState state
-
-updateState :: MVar State -> ByteString -> IO LazyByteString.ByteString
-updateState _stateMVar msg =
+updateState :: Client -> MVar State -> ByteString -> IO LazyByteString.ByteString
+updateState updatedBy stateMVar msg =
   case decodeAction msg of
     Left _err ->
       return $ encodeError $ Text.pack _err
@@ -71,7 +72,7 @@ updateState _stateMVar msg =
         GetLists ->
           encodeLists <$> runDB selectAllLists
 
-        CreateList title ->
+        CreateList title -> do
           encodeIfSuccess (encodeList "CreateList") <$> runDB (insertList title)
 
         DeleteList listId' -> do
@@ -86,6 +87,13 @@ updateState _stateMVar msg =
 
         _ ->
           return $ encodeError $ Text.pack "Action not yet built. Sorry! Come back later :-)"
+
+broadcastUpdate :: WS.WebSocketsData a => Client -> MVar State -> IO a -> IO a
+broadcastUpdate _updatedBy stateMVar update = do
+  state <- readMVar stateMVar
+  forM_ (clients state) $ \client ->
+    WS.sendTextData (conn client) <$> update
+  update
 
 updateClients :: (Client -> Set Client -> Set Client) -> Client -> State -> IO State
 updateClients alteration client state =

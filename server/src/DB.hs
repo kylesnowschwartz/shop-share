@@ -46,6 +46,7 @@ insertList title' = do
 
 deleteList :: Integer -> PGTransaction ()
 deleteList listId' = do
+  _ <- execute (PG.Only listId') "DELETE FROM items WHERE list_id = ?"
   _ <- execute (PG.Only listId') "DELETE FROM lists WHERE id = ?"
   return ()
 

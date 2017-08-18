@@ -189,3 +189,10 @@ Server -> Client
   }
 }
 ```
+
+# TODO:
+## Broadcast updates to all clients
+## UpdateItemText
+## CompleteItem
+## UncompleteItem
+## DeleteItem
