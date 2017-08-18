@@ -14,7 +14,7 @@ import JSON
 
 wsAddress : String
 wsAddress =
-    "ws://afebe343.ngrok.io"
+    "ws://180a9135.ngrok.io"
 
 
 init : ( Model, Cmd Msg )
@@ -68,7 +68,7 @@ update msg model =
             { model | shoppingLists = updateShoppingList model updatedListId (addItem "") } ! [ WS.send wsAddress (JSON.addListItemAction updatedListId) ]
 
         ItemEdited updatedListId newItemId newItemText ->
-            { model | shoppingLists = updateShoppingList model updatedListId (editItem newItemText newItemId) } ! []
+            { model | shoppingLists = updateShoppingList model updatedListId (editItem newItemText newItemId) } ! [ WS.send wsAddress (JSON.editListItemAction updatedListId newItemId newItemText) ]
 
         ItemChecked updatedListId newItemId itemChecked ->
             { model | shoppingLists = updateShoppingList model updatedListId (checkItem itemChecked newItemId) } ! []
@@ -104,6 +104,9 @@ handleMessage model message =
                     model ! []
 
                 AddListItem _ ->
+                    model ! []
+
+                UpdateItemText _ ->
                     model ! []
 
         -- TODO: Really need to return all the lists from CreateList

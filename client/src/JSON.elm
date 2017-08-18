@@ -37,6 +37,9 @@ actionDecoder =
                     "CreateItem" ->
                         decodeAddItem
 
+                    "UpdateItemText" ->
+                        decodeUpdateItem
+
                     other ->
                         fail <| "Unknown action received from server: " ++ other
             )
@@ -75,6 +78,12 @@ decodeEditListTitle =
 decodeAddItem : Decoder Action
 decodeAddItem =
     map AddListItem
+        (at [ "confirmAction", "data", "item" ] (decodeListItem))
+
+
+decodeUpdateItem : Decoder Action
+decodeUpdateItem =
+    map UpdateItemText
         (at [ "confirmAction", "data", "item" ] (decodeListItem))
 
 
@@ -131,6 +140,11 @@ createListAction =
 addListItemAction : ShoppingListId -> String
 addListItemAction listId =
     "{\"action\": {\"type\": \"CreateItem\", \"text\": \"\", \"listId\": " ++ toString listId ++ "}}"
+
+
+editListItemAction : ShoppingListId -> ItemId -> String -> String
+editListItemAction listId itemId newName =
+    "{\"action\": {\"type\": \"UpdateItemText\", \"text\": \"" ++ newName ++ "\", \"itemId\": " ++ toString itemId ++ ",\"listId\": " ++ toString listId ++ "}}"
 
 
 deleteListAction : ShoppingList -> String

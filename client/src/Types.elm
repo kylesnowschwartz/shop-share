@@ -33,6 +33,7 @@ type Action
     | DeleteShoppingList ShoppingList
     | EditListTitle ShoppingList
     | AddListItem ListItem
+    | UpdateItemText ListItem
 
 
 type alias ShoppingListId =
