@@ -13,8 +13,11 @@ enum GRError {
     // Web socket error
     case textToDataError
     case incorrectDataFormatError
-    case unimplementedMethod
     case prematureDisconnection
+
+    // JSON Errors
     case unableToParseJSON
 
+    // Non-error errors
+    case unimplementedMethod
 }

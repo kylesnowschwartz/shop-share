@@ -8,7 +8,17 @@
 
 import Foundation
 
+protocol ListObserverProtocol {
+
+    func didConnectToWebSocket()
+
+    func listsUpdated(_ lists : [List])
+
+}
+
 protocol GRWebSocketDelegateProtocol {
+
+    var observer: ListObserverProtocol? { get set }
 
     func connected()
 

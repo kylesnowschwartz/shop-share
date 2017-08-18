@@ -13,10 +13,16 @@ class GRWebSocket : WebSocketDelegate {
 
     static let shared = GRWebSocket()
 
+    var observer: ListObserverProtocol? = nil {
+        didSet {
+            print("Set observer")
+        }
+    }
+
     lazy var delegate : GRWebSocketDelegateProtocol = self
 
     internal let socket : WebSocket
-    internal let url = URL(string: "ws://afebe343.ngrok.io")!
+    internal let url = URL(string: "ws://180a9135.ngrok.io")!
 
     fileprivate init() {
         socket = WebSocket(url: url)

@@ -34,13 +34,13 @@ struct ServerResponse : Decodable {
 }
 
 struct List : Codable {
-    let listId : Int
+    let listId : Int? = nil
     let title : String
     let items : [Item]
 }
 
 struct Item : Codable {
-    let itemId : Int
+    let itemId : Int? = nil
     let text : String
     let completed : Bool
 }

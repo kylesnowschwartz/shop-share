@@ -10,13 +10,33 @@ import UIKit
 
 private let reuseIdentifier = "ListCell"
 
-class ListsCollectionViewController: UICollectionViewController {
+extension ListsCollectionViewController : DataSourceDelegate {
+    func updated(_ lists: [List]) {
+        self.lists = lists
+        DispatchQueue.main.async {
+            self.collectionView?.reloadData()
+            print(self.listTitles)
+        }
+    }
 
-    var listTitles = ["Flat shopping", "To do", "Ideas for apps", "Things to watch", "Pack for trip"]
+}
+
+class ListsCollectionViewController: UICollectionViewController  {
+
+    var lists : [List] = []
+
+    var dataSource : DataSource!
+
+    lazy var listTitles : [String] = {
+        self.lists.map { $0.title }
+    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        dataSource = DataSource(self)
+
+        //dataSource
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
 

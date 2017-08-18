@@ -9,6 +9,7 @@
 import Foundation
 
 extension GRWebSocket : GRWebSocketDelegateProtocol {
+
     func receivedError(_ error: GRError) {
         print(error)
         switch error {
@@ -38,8 +39,13 @@ extension GRWebSocket : GRWebSocketDelegateProtocol {
         switch action {
         case .registered(_):
             print("Successfully registered!")
-            send(.getLists)
+            delegate.observer?.didConnectToWebSocket()
+            observer?.didConnectToWebSocket()
         case .gotLists( let response):
+            if let lists = response.confirmAction.data.lists {
+                print(response)
+                delegate.observer?.listsUpdated(lists)
+            }
             print("Recieved lists!")
             dump(response)
         case .createdList( let response ):

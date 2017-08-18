@@ -6,7 +6,5 @@ target 'Goojle Retain' do
   use_frameworks!
 
   pod 'Starscream'
-  pod 'Argo'
-  # Pods for Goojle Retain
 
 end
