@@ -58,6 +58,7 @@ data Action = Register
             | DeleteList Integer
             | UpdateListTitle Text Integer
             | CreateItem Text Integer
+            | UpdateItemText Text Integer
             | SubscribeToList Text deriving (Generic, Show)
 
 instance ToJSON Action where
@@ -78,6 +79,7 @@ instance FromJSON Action where
       "DeleteList"      -> DeleteList <$> action .: "listId"
       "UpdateListTitle" -> UpdateListTitle <$> action .: "title" <*> action .: "listId"
       "CreateItem"      -> CreateItem <$> action .: "text" <*> action .: "listId"
+      "UpdateItemText"  -> UpdateItemText <$> action .: "text" <*> action .: "itemId"
       "SubscribeToList" -> SubscribeToList <$> action .: "listId"
       _                 -> fail ("unknown action type: " ++ actionType)
 
