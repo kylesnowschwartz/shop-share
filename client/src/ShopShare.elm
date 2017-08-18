@@ -92,22 +92,22 @@ handleMessage model message =
                     { model | clientId = Just newId } ! [ WS.send wsAddress JSON.getListsAction ]
 
                 GetLists lists ->
-                    { model | shoppingLists = (Debug.log "lists: " lists) } ! []
+                    { model | shoppingLists = List.sortBy .id lists } ! []
 
-                CreateList _ ->
-                    model ! []
+                CreateList newList ->
+                    model ! [ WS.send wsAddress JSON.getListsAction ]
 
                 DeleteShoppingList _ ->
-                    model ! []
+                    model ! [ WS.send wsAddress JSON.getListsAction ]
 
                 EditListTitle _ ->
-                    model ! []
+                    model ! [ WS.send wsAddress JSON.getListsAction ]
 
                 AddListItem _ ->
-                    model ! []
+                    model ! [ WS.send wsAddress JSON.getListsAction ]
 
                 UpdateItemText _ ->
-                    model ! []
+                    model ! [ WS.send wsAddress JSON.getListsAction ]
 
         -- TODO: Really need to return all the lists from CreateList
         Err err ->
