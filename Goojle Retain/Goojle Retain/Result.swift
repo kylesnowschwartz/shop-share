@@ -10,5 +10,15 @@ import Foundation
 
 enum Result<A> {
     case success(A)
-    case error(String)
+    case error(GRError)
+
+    func map<B>(_ f: (A) -> B) -> Result<B> {
+        switch self {
+        case .success(let a):
+            return .success(f(a))
+        case .error(let error):
+            return .error(error)
+        }
+    }
 }
+

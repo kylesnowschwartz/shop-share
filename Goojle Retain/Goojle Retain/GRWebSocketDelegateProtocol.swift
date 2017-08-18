@@ -10,7 +10,11 @@ import Foundation
 
 protocol GRWebSocketDelegateProtocol {
 
+    func connected()
+
     func send(_ action: ClientAction)
 
     func received(_ action: ServerAction)
+
+    func receivedError(_ error: GRError)
 }
