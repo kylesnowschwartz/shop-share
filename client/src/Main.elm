@@ -5,9 +5,9 @@ import ShopShare exposing (Msg, init, subscriptions, update, view)
 import Types exposing (Model)
 
 
-main : Program Never Model Msg
+main : Program Int Model Msg
 main =
-    Html.program
+    Html.programWithFlags
         { init = init
         , view = view
         , update = update

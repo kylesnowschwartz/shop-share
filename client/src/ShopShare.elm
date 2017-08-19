@@ -3,10 +3,12 @@ module ShopShare exposing (Msg, init, subscriptions, update, view)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onCheck, onClick, onFocus)
-import List.Extra exposing (..)
-import WebSocket as WS
-import Types exposing (..)
 import JSON
+import List.Extra exposing (..)
+import Types exposing (..)
+import Uuid as Uuid exposing (Uuid)
+import UuidHelpers exposing (..)
+import WebSocket as WS
 
 
 -- MODEL
@@ -17,21 +19,12 @@ wsAddress =
     "ws://localhost:8000"
 
 
-init : ( Model, Cmd Msg )
-init =
-    { shoppingLists =
-        [ { id = 1
-          , title = "Groceries"
-          , listItems =
-                [ { id = 1
-                  , text = "Apples"
-                  , completed = False
-                  }
-                ]
-          }
-        ]
+init : Int -> ( Model, Cmd Msg )
+init randomNumber =
+    { shoppingLists = []
     , clientId = Nothing
     , errorMessage = Nothing
+    , uuidSeed = uuidSeedFromInt randomNumber
     }
         ! [ WS.send wsAddress (JSON.registerAction) ]
 
@@ -56,7 +49,11 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CreateNewList ->
-            { model | shoppingLists = addList model.shoppingLists } ! [ WS.send wsAddress JSON.createListAction ]
+            let
+                ( modelWithNewSeed, newUuid ) =
+                    stepUuid model
+            in
+                { modelWithNewSeed | shoppingLists = addList newUuid model.shoppingLists } ! [ WS.send wsAddress JSON.createListAction ]
 
         DeleteList list ->
             { model | shoppingLists = List.Extra.remove list model.shoppingLists } ! [ WS.send wsAddress (JSON.deleteListAction list) ]
@@ -65,7 +62,11 @@ update msg model =
             { model | shoppingLists = updateShoppingList model updatedListId (updateTitle newTitle) } ! [ WS.send wsAddress (JSON.editListTitleAction updatedListId newTitle) ]
 
         ItemAdded updatedListId ->
-            { model | shoppingLists = updateShoppingList model updatedListId (addItem "") } ! [ WS.send wsAddress (JSON.addItemAction updatedListId) ]
+            let
+                ( modelWithNewSeed, newUuid ) =
+                    stepUuid model
+            in
+                { modelWithNewSeed | shoppingLists = updateShoppingList model updatedListId (addItem newUuid "") } ! [ WS.send wsAddress (JSON.addItemAction updatedListId) ]
 
         ItemEdited updatedListId newItemId newItemText ->
             { model | shoppingLists = updateShoppingList model updatedListId (editItem newItemText newItemId) } ! [ WS.send wsAddress (JSON.editItemAction updatedListId newItemId newItemText) ]
@@ -96,7 +97,7 @@ handleMessage model message =
                         { model | clientId = Just newId } ! [ WS.send wsAddress JSON.getListsAction ]
 
                     GotLists lists ->
-                        { model | shoppingLists = List.sortBy .id lists } ! []
+                        { model | shoppingLists = orderListsAndTheirItems lists } ! []
 
                     CreatedList newList ->
                         fetchAllLists
@@ -117,6 +118,16 @@ handleMessage model message =
                 { model | errorMessage = Just err } ! []
 
 
+orderListsAndTheirItems : List ShoppingList -> List ShoppingList
+orderListsAndTheirItems =
+    (List.sortBy comparableListId) << (List.map sortItems)
+
+
+sortItems : ShoppingList -> ShoppingList
+sortItems list =
+    { list | listItems = List.sortBy comparableItemId list.listItems }
+
+
 clearCheckedItems : ShoppingList -> ShoppingList
 clearCheckedItems list =
     { list | listItems = List.Extra.filterNot .completed list.listItems }
@@ -127,14 +138,14 @@ updateTitle newTitle list =
     { list | title = newTitle }
 
 
-addItem : String -> ShoppingList -> ShoppingList
-addItem newItem list =
-    { list | listItems = list.listItems ++ [ { id = (incrementItemId list), text = newItem, completed = False } ] }
+addItem : Uuid -> String -> ShoppingList -> ShoppingList
+addItem newUuid text list =
+    { list | listItems = list.listItems ++ [ { id = ItemId newUuid, text = text, completed = False } ] }
 
 
-addList : List ShoppingList -> List ShoppingList
-addList lists =
-    lists ++ [ { id = (incrementListId lists), title = "", listItems = [] } ]
+addList : Uuid -> List ShoppingList -> List ShoppingList
+addList newUuid lists =
+    lists ++ [ { id = ShoppingListId newUuid, title = "", listItems = [] } ]
 
 
 editItem : String -> ItemId -> ShoppingList -> ShoppingList
@@ -164,16 +175,6 @@ checkItem itemChecked newItemId list =
 deleteItem : Item -> ShoppingList -> ShoppingList
 deleteItem deletedItem list =
     { list | listItems = List.Extra.remove deletedItem list.listItems }
-
-
-incrementItemId : ShoppingList -> ItemId
-incrementItemId list =
-    Maybe.withDefault 0 (List.maximum (List.map .id list.listItems)) + 1
-
-
-incrementListId : List ShoppingList -> ShoppingListId
-incrementListId lists =
-    Maybe.withDefault 0 (List.maximum (List.map .id lists)) + 1
 
 
 updateShoppingList : Model -> ShoppingListId -> (ShoppingList -> ShoppingList) -> List ShoppingList

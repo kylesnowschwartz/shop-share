@@ -1,10 +1,17 @@
 module Types exposing (..)
 
+import Uuid as Uuid exposing (Uuid)
+import Random.Pcg as Pcg
+
+
+-- TODO: Make shoppingLists & listItems Sets instead of Lists
+
 
 type alias Model =
     { shoppingLists : List ShoppingList
     , clientId : Maybe ClientId
     , errorMessage : Maybe String
+    , uuidSeed : Pcg.Seed
     }
 
 
@@ -22,10 +29,6 @@ type alias Item =
     }
 
 
-type alias Group =
-    { id : GroupId }
-
-
 type Event
     = Registered ClientId
     | GotLists (List ShoppingList)
@@ -36,17 +39,13 @@ type Event
     | UpdatedItemText Item
 
 
-type alias ShoppingListId =
-    Int
+type ShoppingListId
+    = ShoppingListId Uuid
 
 
-type alias ItemId =
-    Int
+type ItemId
+    = ItemId Uuid
 
 
-type alias ClientId =
-    Int
-
-
-type alias GroupId =
-    Int
+type ClientId
+    = ClientId Uuid

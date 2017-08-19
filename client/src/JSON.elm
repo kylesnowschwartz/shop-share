@@ -3,6 +3,7 @@ module JSON exposing (..)
 import Json.Decode exposing (..)
 import Json.Decode.Pipeline exposing (..)
 import Types exposing (..)
+import Uuid exposing (Uuid)
 
 
 -- DECODING
@@ -48,7 +49,7 @@ eventDecoder =
 decodeRegisteredEvent : Decoder Event
 decodeRegisteredEvent =
     map Registered
-        (at [ "confirmAction", "data", "clientId" ] int)
+        (at [ "confirmAction", "data", "clientId" ] (map ClientId uuid))
 
 
 decodeGotListsEvent : Decoder Event
@@ -90,7 +91,7 @@ decodeUpdatedItemTextEvent =
 decodeShoppingList : Decoder ShoppingList
 decodeShoppingList =
     decode ShoppingList
-        |> required "listId" int
+        |> required "listId" (map ShoppingListId uuid)
         |> required "title" string
         |> required "items" (list decodeItem)
 
@@ -98,9 +99,23 @@ decodeShoppingList =
 decodeItem : Decoder Item
 decodeItem =
     decode Item
-        |> required "itemId" int
+        |> required "itemId" (map ItemId uuid)
         |> required "text" string
         |> required "completed" bool
+
+
+uuid : Decoder Uuid
+uuid =
+    string
+        |> andThen
+            (\str ->
+                case (Uuid.fromString str) of
+                    Just uuid_ ->
+                        succeed uuid_
+
+                    Nothing ->
+                        fail str
+            )
 
 
 registerSample : String
