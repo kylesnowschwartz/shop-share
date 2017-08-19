@@ -4,7 +4,7 @@
 ## Errors
 
 Server -> Client
-```json
+```js
 {
   "error": {
     "message": "Action not yet built. Sorry! Come back later :-)"
@@ -16,7 +16,7 @@ Server -> Client
 ## Register
 
 Client -> Server
-```json
+```js
 {
   "action": {
     "type": "Register"
@@ -25,7 +25,7 @@ Client -> Server
 ```
 
 Server -> Client
-```json
+```js
 {
   "confirmAction": {
     "type": "Register",
@@ -40,7 +40,7 @@ Server -> Client
 ## GetLists
 
 Client -> Server
-```json
+```js
 {
   "action": {
     "type": "GetLists"
@@ -49,7 +49,7 @@ Client -> Server
 ```
 
 Server -> Client
-```json
+```js
 {
   "confirmAction": {
     "type": "GetLists",
@@ -76,7 +76,7 @@ Server -> Client
 ## CreateList
 
 Client -> Server
-```json
+```js
 {
   "action": {
     "type": "CreateList",
@@ -86,7 +86,7 @@ Client -> Server
 ```
 
 Server -> Client
-```json
+```js
 {
   "confirmAction": {
     "type": "CreateList",
@@ -105,7 +105,7 @@ Server -> Client
 ## DeleteList
 
 Client -> Server
-```json
+```js
 {
   "action": {
     "type": "DeleteList",
@@ -115,7 +115,7 @@ Client -> Server
 ```
 
 Server -> Client
-```json
+```js
 {
   "confirmAction": {
     "type": "GetLists",
@@ -134,7 +134,7 @@ Server -> Client
 ## UpdateListTitle
 
 Client -> Server
-```json
+```js
 {
   "action": {
     "type": "UpdateListTitle",
@@ -145,7 +145,7 @@ Client -> Server
 ```
 
 Server -> Client
-```json
+```js
 {
   "confirmAction": {
     "type": "UpdateListTitle",
@@ -163,7 +163,7 @@ Server -> Client
 ## CreateItem
 
 Client -> Server
-```json
+```js
 {
   "action": {
     "type": "CreateItem",
@@ -174,7 +174,7 @@ Client -> Server
 ```
 
 Server -> Client
-```json
+```js
 {
   "confirmAction": {
     "type": "CreateItem",
@@ -193,7 +193,7 @@ Server -> Client
 ## UpdateItemText
 
 Client -> Server
-```json
+```js
 {
   "action": {
     "type": "UpdateItemText",
@@ -204,7 +204,7 @@ Client -> Server
 ```
 
 Server -> Client
-```json
+```js
 {
   "confirmAction": {
     "type": "UpdateItemText",
