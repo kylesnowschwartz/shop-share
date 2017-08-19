@@ -8,7 +8,6 @@ import           Data.Aeson                         (FromJSON, ToJSON, (.:),
 import qualified Data.Aeson                         as JSON
 import           Data.ByteString                    (ByteString)
 import qualified Data.ByteString.Lazy.Internal      as LazyByteString
-import           Data.Semigroup                     ((<>))
 import           Data.Set                           as Set
 import           Data.Text                          (Text)
 import qualified Data.Text                          as Text
@@ -48,9 +47,9 @@ data Item =
        , listsId   :: Integer
        } deriving (Generic, Show)
 
-instance FromRow Item
 instance ToJSON Item
 instance FromJSON Item
+instance FromRow Item
 
 data Action = Register
             | GetLists
@@ -60,12 +59,6 @@ data Action = Register
             | CreateItem Text Integer
             | UpdateItemText Text Integer
             | SubscribeToList Text deriving (Generic, Show)
-
-instance ToJSON Action where
-  toJSON Register = JSON.object [ "action" .= JSON.object [ "type" .= ("Register" :: JSON.Value) ] ]
-  toJSON GetLists = JSON.object [ "action" .= JSON.object [ "type" .= ("GetLists" :: JSON.Value) ] ]
-  toJSON (SubscribeToList _) = JSON.object [ "type" .= ("SubscribeToList" :: JSON.Value) ]
-  toJSON action = errorEncoder $ Text.pack $ "Can't encode action: " <> show action
 
 instance FromJSON Action where
   parseJSON = JSON.withObject "action" $ \obj -> do
@@ -87,60 +80,40 @@ decodeAction :: ByteString -> Either String Action
 decodeAction =
   JSON.eitherDecodeStrict
 
-encodeRegistered :: Integer -> LazyByteString.ByteString
-encodeRegistered clientId' =
-  JSON.encode $ JSON.object
-  [
-    "confirmAction" .= JSON.object
-    [ "type" .= JSON.String ("Register" :: Text)
-    , "data" .= JSON.object [ "clientId" .= clientId' ]
+encodeAction :: ToJSON v => Action -> v -> LazyByteString.ByteString
+encodeAction action value =
+  JSON.encode $ JSON.object [
+  "confirmAction" .= JSON.object
+    [ "type" .= JSON.String actionType
+    , "data" .= JSON.object data'
     ]
   ]
+  where (actionType, data') =
+          case action of
+            Register              ->
+              ("Register", [ "clientId" .= value ])
+            GetLists              ->
+              ("GetLists", [ "lists" .= value ])
+            (CreateList _)        ->
+              ("CreateList", [ "list" .= value ])
+            (DeleteList _)         ->
+              ("DeleteList", [ "lists" .= value ])
+            (UpdateListTitle _ _) ->
+              ("UpdateListTitle", [ "list" .= value ])
+            (CreateItem _ _)      ->
+              ("CreateItem", [ "item" .= value ])
+            (UpdateItemText _ _)  ->
+              ("UpdateItemText", [ "item" .= value ])
+            (SubscribeToList _)   ->
+              ("SubscribeToList", [])
 
-encodeLists :: [List] -> LazyByteString.ByteString
-encodeLists lists =
-  JSON.encode $ JSON.object
-  [
-    "confirmAction" .= JSON.object
-    [ "type" .= JSON.String ("GetLists" :: Text)
-    , "data" .= JSON.object [ "lists" .= lists ]
-    ]
-  ]
-
-encodeList :: Text -> List -> LazyByteString.ByteString
-encodeList action list =
-  JSON.encode $ JSON.object
-  [
-    "confirmAction" .= JSON.object
-    [ "type" .= JSON.String action
-    , "data" .= JSON.object [ "list" .= list ]
-    ]
-  ]
-
-encodeItem :: Text -> Item -> LazyByteString.ByteString
-encodeItem action item =
-  JSON.encode $ JSON.object
-  [
-    "confirmAction" .= JSON.object
-    [ "type" .= JSON.String action
-    , "data" .= JSON.object [ "item" .= item ]
-    ]
-  ]
-
-encodeIfSuccess :: (List -> LazyByteString.ByteString) -> Maybe List -> LazyByteString.ByteString
-encodeIfSuccess _ Nothing = encodeError $ Text.pack "Sorry, we couldn't make that change! :-("
-encodeIfSuccess encoder (Just list) = encoder list
-
-encodeItemIfSuccess :: (Item -> LazyByteString.ByteString) -> Maybe Item -> LazyByteString.ByteString
-encodeItemIfSuccess _ Nothing = encodeError $ Text.pack "Sorry, we couldn't make that change! :-("
-encodeItemIfSuccess encoder (Just item) = encoder item
+encodeActionIfSuccess :: ToJSON v => Action -> Maybe v -> LazyByteString.ByteString
+encodeActionIfSuccess _ Nothing = encodeError $ Text.pack "Sorry, we couldn't make that change! :-("
+encodeActionIfSuccess action (Just value) = encodeAction action value
 
 encodeError :: Text -> LazyByteString.ByteString
 encodeError err =
-  JSON.encode $ errorEncoder err
-
-errorEncoder :: Text -> JSON.Value
-errorEncoder err = JSON.object [
+  JSON.encode $ JSON.object [
   "error" .= JSON.object [
       "message" .= JSON.String err
       ]

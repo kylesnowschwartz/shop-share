@@ -11,10 +11,8 @@ import           Data.ByteString               (ByteString)
 import qualified Data.ByteString.Lazy.Internal as LazyByteString
 import           Data.Set                      (Set)
 import qualified Data.Set                      as Set
-import           Data.Text                     (Text)
 import qualified Data.Text                     as Text
 import           DB
-import           Debug.Trace
 import qualified Network.WebSockets            as WS
 import           Types
 
@@ -48,7 +46,7 @@ nextClientId state =
 connect :: MVar State -> Client -> IO ()
 connect stateMVar client@Client{..} = do
   modifyMVar_ stateMVar $ updateClients Set.insert client
-  WS.sendTextData conn $ encodeRegistered clientId
+  WS.sendTextData conn $ encodeAction Register clientId
 
 disconnect :: MVar State -> Client -> IO ()
 disconnect stateMVar client =
@@ -56,52 +54,45 @@ disconnect stateMVar client =
 
 talk :: MVar State -> Client -> IO ()
 talk stateMVar client = forever $ do
-  response <- WS.receiveData (conn client) >>= updateState client stateMVar
+  response <- WS.receiveData (conn client) >>= handleAction client stateMVar
   state <- readMVar stateMVar
   forM_ (clients state) $ \c ->
     WS.sendTextData (conn c) response
 
-updateState :: Client -> MVar State -> ByteString -> IO LazyByteString.ByteString
-updateState updatedBy stateMVar msg =
+handleAction :: Client -> MVar State -> ByteString -> IO LazyByteString.ByteString
+handleAction _updatedBy _stateMVar msg =
   case decodeAction msg of
     Left _err ->
       return $ encodeError $ Text.pack _err
 
     Right action ->
-      case action of
-        GetLists ->
-          encodeLists <$> runDB selectAllLists
+      performAction action
 
-        CreateList title ->
-          encodeIfSuccess (encodeList "CreateList") <$> runDB (insertList title)
+performAction :: Action -> IO LazyByteString.ByteString
+performAction action =
+  case action of
+    GetLists ->
+      encodeAction action <$> runDB selectAllLists
 
-        DeleteList listId' -> do
-          runDB $ deleteList listId'
-          encodeLists <$> runDB selectAllLists
+    CreateList title ->
+      encodeActionIfSuccess action <$> runDB (insertList title)
 
-        UpdateListTitle newTitle id' ->
-          encodeIfSuccess (encodeList "UpdateListTitle") <$> runDB (updateList newTitle id')
+    DeleteList listId' -> do
+      runDB $ deleteList listId'
+      encodeAction action <$> runDB selectAllLists
 
-        CreateItem itemText listId' ->
-          encodeItemIfSuccess (encodeItem "CreateItem") <$> runDB (insertItem itemText listId')
+    UpdateListTitle newTitle id' ->
+      encodeActionIfSuccess action <$> runDB (updateList newTitle id')
 
-        UpdateItemText newText id' ->
-          encodeItemIfSuccess (encodeItem "UpdateItemText") <$> runDB (updateItem newText id')
+    CreateItem itemText listId' ->
+      encodeActionIfSuccess action <$> runDB (insertItem itemText listId')
 
-        _ ->
-          return $ encodeError $ Text.pack "Action not yet built. Sorry! Come back later :-)"
+    UpdateItemText newText id' ->
+      encodeActionIfSuccess action <$> runDB (updateItem newText id')
 
-broadcastUpdate :: WS.WebSocketsData a => Client -> MVar State -> IO a -> IO a
-broadcastUpdate _updatedBy stateMVar update = do
-  state <- readMVar stateMVar
-  forM_ (clients state) $ \client ->
-    WS.sendTextData (conn client) <$> update
-  update
+    _ ->
+      return $ encodeError $ Text.pack "Action not yet built. Sorry!"
 
 updateClients :: (Client -> Set Client -> Set Client) -> Client -> State -> IO State
 updateClients alteration client state =
   return $ State (alteration client $ clients state)
-
-encodeState :: State -> Text
-encodeState state =
-  Text.concat $ map (Text.pack . show . clientId) (Set.elems $ clients state)
