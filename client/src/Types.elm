@@ -46,11 +46,11 @@ type alias Item =
 type Event
     = Registered ClientId
     | GotLists (List ShoppingList)
-    | CreatedList ShoppingList
-    | DeletedList ShoppingList
-    | UpdatedListTitle ShoppingList
-    | CreatedItem Item
-    | UpdatedItemText Item
+    | CreatedList (List ShoppingList)
+    | DeletedList (List ShoppingList)
+    | UpdatedListTitle (List ShoppingList)
+    | CreatedItem (List ShoppingList)
+    | UpdatedItemText (List ShoppingList)
 
 
 type ShoppingListId

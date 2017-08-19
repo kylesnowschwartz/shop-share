@@ -19,7 +19,8 @@ Client -> Server
 ```js
 {
   "action": {
-    "type": "Register"
+    "type": "Register",
+    "data": {}
   }
 }
 ```
@@ -43,7 +44,8 @@ Client -> Server
 ```js
 {
   "action": {
-    "type": "GetLists"
+    "type": "GetLists",
+    "data": {}
   }
 }
 ```
@@ -80,7 +82,9 @@ Client -> Server
 {
   "action": {
     "type": "CreateList",
-    "title": "Foo bar list"
+    "data": {
+      "title": "Foo bar list"
+    }
   }
 }
 ```
@@ -109,7 +113,9 @@ Client -> Server
 {
   "action": {
     "type": "DeleteList",
-    "listId": 9
+    "data": {
+      "listId": 9
+    }
   }
 }
 ```
@@ -138,8 +144,10 @@ Client -> Server
 {
   "action": {
     "type": "UpdateListTitle",
-    "listId": 1,
-    "title": "New title"
+    "data": {
+      "listId": 1,
+      "title": "New title"
+    }
   }
 }
 ```
@@ -167,8 +175,10 @@ Client -> Server
 {
   "action": {
     "type": "CreateItem",
-    "text": "",
-    "listId": 1
+    "data": {
+      "text": "",
+      "listId": 1
+    }
   }
 }
 ```
@@ -197,8 +207,10 @@ Client -> Server
 {
   "action": {
     "type": "UpdateItemText",
-    "text": "foo bar",
-    "itemId": 1
+    "data": {
+      "text": "foo bar",
+      "itemId": 1
+    }
   }
 }
 ```

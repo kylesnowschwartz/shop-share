@@ -54,40 +54,39 @@ decodeRegisteredEvent =
         (at [ "confirmAction", "data", "clientId" ] (map ClientId uuid))
 
 
+listsDecoder : Decoder (List ShoppingList)
+listsDecoder =
+    at [ "confirmAction", "data", "lists" ] (Decode.list decodeShoppingList)
+
+
 decodeGotListsEvent : Decoder Event
 decodeGotListsEvent =
-    map GotLists
-        (at [ "confirmAction", "data", "lists" ] (Decode.list decodeShoppingList))
+    map GotLists listsDecoder
 
 
 decodeCreatedListEvent : Decoder Event
 decodeCreatedListEvent =
-    map CreatedList
-        (at [ "confirmAction", "data", "list" ] (decodeShoppingList))
+    map CreatedList listsDecoder
 
 
 decodeDeletedListEvent : Decoder Event
 decodeDeletedListEvent =
-    map DeletedList
-        (at [ "confirmAction", "data", "list" ] (decodeShoppingList))
+    map DeletedList listsDecoder
 
 
 decodeUpdatedListTitleEvent : Decoder Event
 decodeUpdatedListTitleEvent =
-    map UpdatedListTitle
-        (at [ "confirmAction", "data", "list" ] (decodeShoppingList))
+    map UpdatedListTitle listsDecoder
 
 
 decodeCreatedItemEvent : Decoder Event
 decodeCreatedItemEvent =
-    map CreatedItem
-        (at [ "confirmAction", "data", "item" ] (decodeItem))
+    map CreatedItem listsDecoder
 
 
 decodeUpdatedItemTextEvent : Decoder Event
 decodeUpdatedItemTextEvent =
-    map UpdatedItemText
-        (at [ "confirmAction", "data", "item" ] (decodeItem))
+    map UpdatedItemText listsDecoder
 
 
 decodeShoppingList : Decoder ShoppingList
@@ -118,21 +117,6 @@ uuid =
                     Nothing ->
                         fail str
             )
-
-
-registerSample : String
-registerSample =
-    "{\"confirmAction\": {\"type\": \"Register\", \"data\": { \"clientId\": 1 }}}"
-
-
-getListsSample : String
-getListsSample =
-    "{\"confirmAction\": {\"type\": \"GetLists\", \"data\": { \"lists\": [ { \"listId\": 1, \"title\": \"Test list\", \"items\": [ { \"itemId\": 1, \"text\": \"Get some Haskell down ya\", \"completed\": false}]} ] }}}"
-
-
-invalidActionSample : String
-invalidActionSample =
-    "{\"confirmAction\": {\"type\": \"PoosAndWeesAndBucketsOfCheese\", \"data\": { \"clientId\": 1 }}}"
 
 
 
@@ -210,27 +194,3 @@ msgToActionType msg =
 
         MessageReceived _ ->
             "MessageReceived"
-
-
-
--- registerAction : String
--- registerAction =
---     "{\"action\": {\"type\": \"Register\"}}"
--- getListsAction : String
--- getListsAction =
---     "{\"action\": {\"type\": \"GetLists\"}}"
--- createListAction : String
--- createListAction =
---     "{\"action\": {\"type\": \"CreateList\", \"title\": \"\"}}"
--- addItemAction : ShoppingListId -> String
--- addItemAction listId =
---     "{\"action\": {\"type\": \"CreateItem\", \"text\": \"\", \"listId\": " ++ toString listId ++ "}}"
--- editItemAction : ShoppingListId -> ItemId -> String -> String
--- editItemAction listId itemId newName =
---     "{\"action\": {\"type\": \"UpdateItemText\", \"text\": \"" ++ newName ++ "\", \"itemId\": " ++ toString itemId ++ ",\"listId\": " ++ toString listId ++ "}}"
--- deleteListAction : ShoppingList -> String
--- deleteListAction list =
---     "{\"action\": {\"type\": \"DeleteList\", \"listId\": " ++ toString list.id ++ "}}"
--- editListTitleAction : ShoppingListId -> String -> String
--- editListTitleAction listId newTitle =
---     "{\"action\": {\"type\": \"UpdateListTitle\", \"title\": \"" ++ newTitle ++ "\", \"listId\": " ++ toString listId ++ "}}"

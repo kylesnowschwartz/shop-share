@@ -15,8 +15,8 @@ decodeAction :: ByteString -> Either String Action
 decodeAction =
   JSON.eitherDecodeStrict
 
-encodeAction :: ToJSON v => Action -> v -> LazyByteString.ByteString
-encodeAction action value =
+encodeActionConfirmation :: ToJSON v => Action -> v -> LazyByteString.ByteString
+encodeActionConfirmation action value =
   JSON.encode $ JSON.object [
   "confirmAction" .= JSON.object
     [ "type" .= JSON.String actionType
@@ -30,21 +30,21 @@ encodeAction action value =
             GetLists              ->
               ("GetLists", [ "lists" .= value ])
             (CreateList _)        ->
-              ("CreateList", [ "list" .= value ])
+              ("CreateList", [ "lists" .= value ])
             (DeleteList _)         ->
               ("DeleteList", [ "lists" .= value ])
             (UpdateListTitle _ _) ->
-              ("UpdateListTitle", [ "list" .= value ])
+              ("UpdateListTitle", [ "lists" .= value ])
             (CreateItem _ _)      ->
-              ("CreateItem", [ "item" .= value ])
+              ("CreateItem", [ "lists" .= value ])
             (UpdateItemText _ _)  ->
-              ("UpdateItemText", [ "item" .= value ])
+              ("UpdateItemText", [ "lists" .= value ])
             (SubscribeToList _)   ->
               ("SubscribeToList", [])
 
 encodeActionIfSuccess :: ToJSON v => Action -> Maybe v -> LazyByteString.ByteString
 encodeActionIfSuccess _ Nothing = encodeError $ Text.pack "Sorry, we couldn't make that change! :-("
-encodeActionIfSuccess action (Just value) = encodeAction action value
+encodeActionIfSuccess action (Just value) = encodeActionConfirmation action value
 
 encodeError :: Text -> LazyByteString.ByteString
 encodeError err =

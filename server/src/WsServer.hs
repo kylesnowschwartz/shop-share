@@ -43,7 +43,7 @@ nextClientId =
 connect :: MVar State -> Client -> IO ()
 connect stateMVar client@Client{..} = do
   modifyMVar_ stateMVar $ updateClients Set.insert client
-  WS.sendTextData conn $ encodeAction Register clientId
+  WS.sendTextData conn $ encodeActionConfirmation Register clientId
 
 disconnect :: MVar State -> Client -> IO ()
 disconnect stateMVar client =
@@ -69,29 +69,37 @@ performAction :: Action -> IO LazyByteString.ByteString
 performAction action =
   case action of
     GetLists ->
-      encodeAction action <$> runDB selectAllLists
+      confirmActionAndReturnAllLists
 
-    CreateList title ->
-      encodeActionIfSuccess action <$> runDB (insertList title)
+    CreateList title -> do
+      _ <- runDB (insertList title)
+      confirmActionAndReturnAllLists
 
     DeleteList listId' -> do
       runDB $ deleteList listId'
-      encodeAction action <$> runDB selectAllLists
+      confirmActionAndReturnAllLists
 
-    UpdateListTitle newTitle id' ->
-      encodeActionIfSuccess action <$> runDB (updateList newTitle id')
+    UpdateListTitle newTitle id' -> do
+      _ <- runDB (updateList newTitle id')
+      confirmActionAndReturnAllLists
 
-    CreateItem itemText listId' ->
-      encodeActionIfSuccess action <$> runDB (insertItem itemText listId')
+    CreateItem itemText listId' -> do
+      _ <- runDB (insertItem itemText listId')
+      confirmActionAndReturnAllLists
 
-    UpdateItemText newText id' ->
-      encodeActionIfSuccess action <$> runDB (updateItem newText id')
+    UpdateItemText newText id' -> do
+      _ <- runDB (updateItem newText id')
+      confirmActionAndReturnAllLists
 
     Register ->
       return $ encodeError $ Text.pack "You're already registered on this connection!"
 
     _ ->
       return $ encodeError $ Text.pack "Action not yet built. Sorry!"
+
+  where
+    confirmActionAndReturnAllLists =
+      encodeActionConfirmation action <$> runDB selectAllLists
 
 updateClients :: (Client -> Set Client -> Set Client) -> Client -> State -> IO State
 updateClients alteration client state =

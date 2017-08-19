@@ -70,14 +70,15 @@ instance FromJSON Action where
   parseJSON = JSON.withObject "action" $ \obj -> do
     action <- obj .: "action"
     actionType <- action .: "type"
+    data' <- action .: "data"
 
     case actionType of
       "Register"        -> pure Register
       "GetLists"        -> pure GetLists
-      "CreateList"      -> CreateList <$> action .: "title"
-      "DeleteList"      -> DeleteList <$> action .: "listId"
-      "UpdateListTitle" -> UpdateListTitle <$> action .: "title" <*> action .: "listId"
-      "CreateItem"      -> CreateItem <$> action .: "text" <*> action .: "listId"
-      "UpdateItemText"  -> UpdateItemText <$> action .: "text" <*> action .: "itemId"
-      "SubscribeToList" -> SubscribeToList <$> action .: "listId"
+      "CreateList"      -> CreateList <$> data' .: "title"
+      "DeleteList"      -> DeleteList <$> data' .: "listId"
+      "UpdateListTitle" -> UpdateListTitle <$> data' .: "title" <*> data' .: "listId"
+      "CreateItem"      -> CreateItem <$> data' .: "text" <*> data' .: "listId"
+      "UpdateItemText"  -> UpdateItemText <$> data' .: "text" <*> data' .: "itemId"
+      "SubscribeToList" -> SubscribeToList <$> data' .: "listId"
       _                 -> fail ("unknown action type: " ++ actionType)
