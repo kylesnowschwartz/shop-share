@@ -14,7 +14,7 @@ import JSON
 
 wsAddress : String
 wsAddress =
-    "ws://180a9135.ngrok.io"
+    "ws://localhost:8000"
 
 
 init : ( Model, Cmd Msg )
@@ -41,7 +41,7 @@ init =
 
 
 type Msg
-    = ShoppingListTitleEdited Int String
+    = ShoppingListTitleEdited ShoppingListId String
     | CreateNewList
     | DeleteList ShoppingList
     | ItemAdded ShoppingListId
@@ -149,7 +149,7 @@ editItem newItemText newItemId list =
         { list | listItems = List.map applyIfEdited list.listItems }
 
 
-checkItem : Bool -> Int -> ShoppingList -> ShoppingList
+checkItem : Bool -> ItemId -> ShoppingList -> ShoppingList
 checkItem itemChecked newItemId list =
     let
         applyIfChecked item =
