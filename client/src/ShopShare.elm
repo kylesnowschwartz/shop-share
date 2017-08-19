@@ -1,9 +1,10 @@
-module ShopShare exposing (Msg, init, subscriptions, update, view)
+module ShopShare exposing (init, subscriptions, update, view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onCheck, onClick, onFocus)
 import JSON
+import Json.Encode as Encode
 import List.Extra exposing (..)
 import Types exposing (..)
 import Uuid as Uuid exposing (Uuid)
@@ -26,75 +27,86 @@ init randomNumber =
     , errorMessage = Nothing
     , uuidSeed = uuidSeedFromInt randomNumber
     }
-        ! [ WS.send wsAddress (JSON.registerAction) ]
+        ! [ WS.send wsAddress (JSON.encodeMsg Register JSON.emptyObject) ]
 
 
 
 -- UPDATE
 
 
-type Msg
-    = ShoppingListTitleEdited ShoppingListId String
-    | CreateNewList
-    | DeleteList ShoppingList
-    | ItemAdded ShoppingListId
-    | ItemEdited ShoppingListId ItemId String
-    | ItemChecked ShoppingListId ItemId Bool
-    | ItemDeleted ShoppingListId Item
-    | ClearCheckedItems ShoppingListId
-    | MessageReceived String
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        Register ->
+            model ! []
+
+        GetLists ->
+            model ! [ sendMsg GetLists JSON.emptyObject ]
+
         CreateNewList ->
             let
                 ( modelWithNewSeed, newUuid ) =
                     stepUuid model
             in
-                { modelWithNewSeed | shoppingLists = addList newUuid model.shoppingLists } ! [ WS.send wsAddress JSON.createListAction ]
+                { modelWithNewSeed | shoppingLists = addList newUuid model.shoppingLists }
+                    ! [ sendMsg msg JSON.emptyObject ]
 
         DeleteList list ->
-            { model | shoppingLists = List.Extra.remove list model.shoppingLists } ! [ WS.send wsAddress (JSON.deleteListAction list) ]
+            { model | shoppingLists = List.Extra.remove list model.shoppingLists }
+                ! [ sendMsg msg (JSON.encodeList list) ]
 
-        ShoppingListTitleEdited updatedListId newTitle ->
-            { model | shoppingLists = updateShoppingList model updatedListId (updateTitle newTitle) } ! [ WS.send wsAddress (JSON.editListTitleAction updatedListId newTitle) ]
+        ShoppingListTitleEdited list newTitle ->
+            { model | shoppingLists = updateShoppingList model list (updateTitle newTitle) }
+                ! [ sendMsg msg (JSON.encodeList list) ]
 
-        ItemAdded updatedListId ->
+        ItemAdded list ->
             let
                 ( modelWithNewSeed, newUuid ) =
                     stepUuid model
+
+                newItem =
+                    { id = ItemId newUuid, text = "", completed = False }
             in
-                { modelWithNewSeed | shoppingLists = updateShoppingList model updatedListId (addItem newUuid "") } ! [ WS.send wsAddress (JSON.addItemAction updatedListId) ]
+                { modelWithNewSeed | shoppingLists = updateShoppingList model list (addItem newItem) }
+                    ! [ sendMsg msg (JSON.encodeItem newItem list) ]
 
-        ItemEdited updatedListId newItemId newItemText ->
-            { model | shoppingLists = updateShoppingList model updatedListId (editItem newItemText newItemId) } ! [ WS.send wsAddress (JSON.editItemAction updatedListId newItemId newItemText) ]
+        ItemTextEdited listId item newItemText ->
+            { model | shoppingLists = updateShoppingList model listId (editItem newItemText item.id) }
+                ! [ sendMsg msg (JSON.encodeItem { item | text = newItemText } listId) ]
 
-        ItemChecked updatedListId newItemId itemChecked ->
-            { model | shoppingLists = updateShoppingList model updatedListId (checkItem itemChecked newItemId) } ! []
+        ItemChecked updatedListId item itemChecked ->
+            { model | shoppingLists = updateShoppingList model updatedListId (checkItem itemChecked item) }
+                ! []
 
         ItemDeleted updatedListId deletedItem ->
-            { model | shoppingLists = updateShoppingList model updatedListId (deleteItem deletedItem) } ! []
+            { model | shoppingLists = updateShoppingList model updatedListId (deleteItem deletedItem) }
+                ! []
 
         ClearCheckedItems updatedListId ->
-            { model | shoppingLists = updateShoppingList model updatedListId (clearCheckedItems) } ! []
+            { model | shoppingLists = updateShoppingList model updatedListId (clearCheckedItems) }
+                ! []
 
         MessageReceived message ->
             handleMessage model message
+
+
+sendMsg : Msg -> Encode.Value -> Cmd Msg
+sendMsg msg data =
+    WS.send wsAddress (JSON.encodeMsg msg data)
 
 
 handleMessage : Model -> String -> ( Model, Cmd Msg )
 handleMessage model message =
     let
         fetchAllLists =
-            model ! [ WS.send wsAddress JSON.getListsAction ]
+            model ! [ WS.send wsAddress (JSON.encodeMsg GetLists JSON.emptyObject) ]
     in
         case JSON.decodeEvent message of
             Ok action ->
                 case action of
                     Registered newId ->
-                        { model | clientId = Just newId } ! [ WS.send wsAddress JSON.getListsAction ]
+                        { model | clientId = Just newId }
+                            ! [ WS.send wsAddress (JSON.encodeMsg GetLists JSON.emptyObject) ]
 
                     GotLists lists ->
                         { model | shoppingLists = orderListsAndTheirItems lists } ! []
@@ -120,12 +132,12 @@ handleMessage model message =
 
 orderListsAndTheirItems : List ShoppingList -> List ShoppingList
 orderListsAndTheirItems =
-    (List.sortBy comparableListId) << (List.map sortItems)
+    (List.sortBy listIdToString) << (List.map sortItems)
 
 
 sortItems : ShoppingList -> ShoppingList
 sortItems list =
-    { list | listItems = List.sortBy comparableItemId list.listItems }
+    { list | listItems = List.sortBy itemIdToString list.listItems }
 
 
 clearCheckedItems : ShoppingList -> ShoppingList
@@ -138,9 +150,9 @@ updateTitle newTitle list =
     { list | title = newTitle }
 
 
-addItem : Uuid -> String -> ShoppingList -> ShoppingList
-addItem newUuid text list =
-    { list | listItems = list.listItems ++ [ { id = ItemId newUuid, text = text, completed = False } ] }
+addItem : Item -> ShoppingList -> ShoppingList
+addItem item list =
+    { list | listItems = list.listItems ++ [ item ] }
 
 
 addList : Uuid -> List ShoppingList -> List ShoppingList
@@ -160,11 +172,11 @@ editItem newItemText newItemId list =
         { list | listItems = List.map applyIfEdited list.listItems }
 
 
-checkItem : Bool -> ItemId -> ShoppingList -> ShoppingList
-checkItem itemChecked newItemId list =
+checkItem : Bool -> Item -> ShoppingList -> ShoppingList
+checkItem itemChecked itemToCheck list =
     let
         applyIfChecked item =
-            if item.id == newItemId then
+            if item.id == itemToCheck.id then
                 { item | completed = itemChecked }
             else
                 item
@@ -177,11 +189,11 @@ deleteItem deletedItem list =
     { list | listItems = List.Extra.remove deletedItem list.listItems }
 
 
-updateShoppingList : Model -> ShoppingListId -> (ShoppingList -> ShoppingList) -> List ShoppingList
-updateShoppingList model updatedId updateFunction =
+updateShoppingList : Model -> ShoppingList -> (ShoppingList -> ShoppingList) -> List ShoppingList
+updateShoppingList model updatedList updateFunction =
     let
         filteredUpdate list =
-            if list.id == updatedId then
+            if list.id == updatedList.id then
                 updateFunction list
             else
                 list
@@ -226,27 +238,27 @@ viewShoppingList list =
     dd [ class "content" ]
         [ input
             [ placeholder "List title"
-            , onInput (ShoppingListTitleEdited list.id)
+            , onInput (ShoppingListTitleEdited list)
             , value list.title
             ]
             []
         , a [ tabindex -1, class "delete is-small", onClick (DeleteList list) ] []
         , div []
             [ dl [ class "list" ]
-                (List.concat [ List.map (viewListItem list.id) list.listItems, [ viewAddListItem list ] ])
+                (List.concat [ List.map (viewListItem list) list.listItems, [ viewAddListItem list ] ])
             ]
         , div []
             [ viewClearCheckedItems list ]
         ]
 
 
-viewListItem : ShoppingListId -> Item -> Html Msg
-viewListItem listId item =
+viewListItem : ShoppingList -> Item -> Html Msg
+viewListItem list item =
     dd []
-        [ input [ tabindex 2, placeholder "Item name", value item.text, onInput (ItemEdited listId item.id) ] []
+        [ input [ tabindex 2, placeholder "Item name", value item.text, onInput (ItemTextEdited list item) ] []
         , label [ class "checkbox" ]
-            [ input [ type_ "checkbox", checked item.completed, Html.Events.onCheck (ItemChecked listId item.id) ] [] ]
-        , a [ tabindex -1, class "delete is-small", onClick (ItemDeleted listId item) ] []
+            [ input [ type_ "checkbox", checked item.completed, Html.Events.onCheck (ItemChecked list item) ] [] ]
+        , a [ tabindex -1, class "delete is-small", onClick (ItemDeleted list item) ] []
         ]
 
 
@@ -255,7 +267,7 @@ viewAddListItem list =
     dd []
         [ input
             [ placeholder "Add a new list item"
-            , onClick (ItemAdded list.id)
+            , onClick (ItemAdded list)
             ]
             []
         ]
@@ -263,7 +275,7 @@ viewAddListItem list =
 
 viewClearCheckedItems : ShoppingList -> Html Msg
 viewClearCheckedItems list =
-    button [ class "button is-primary", onClick (ClearCheckedItems list.id) ] [ text "clear checked items" ]
+    button [ class "button is-primary", onClick (ClearCheckedItems list) ] [ text "clear checked items" ]
 
 
 subscriptions : Model -> Sub Msg

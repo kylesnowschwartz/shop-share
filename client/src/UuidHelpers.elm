@@ -18,15 +18,15 @@ stepUuid model =
         ( { model | uuidSeed = newSeed }, newUuid )
 
 
-comparableListId : ShoppingList -> String
-comparableListId list =
+listIdToString : ShoppingList -> String
+listIdToString list =
     case list.id of
         ShoppingListId uuid ->
             Uuid.toString uuid
 
 
-comparableItemId : Item -> String
-comparableItemId item =
+itemIdToString : Item -> String
+itemIdToString item =
     case item.id of
         ItemId uuid ->
             Uuid.toString uuid

@@ -1,8 +1,8 @@
 module Main exposing (main)
 
 import Html
-import ShopShare exposing (Msg, init, subscriptions, update, view)
-import Types exposing (Model)
+import ShopShare exposing (init, subscriptions, update, view)
+import Types exposing (Model, Msg)
 
 
 main : Program Int Model Msg

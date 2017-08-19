@@ -7,6 +7,20 @@ import Random.Pcg as Pcg
 -- TODO: Make shoppingLists & listItems Sets instead of Lists
 
 
+type Msg
+    = Register
+    | GetLists
+    | CreateNewList
+    | DeleteList ShoppingList
+    | ShoppingListTitleEdited ShoppingList String
+    | ItemAdded ShoppingList
+    | ItemTextEdited ShoppingList Item String
+    | ItemChecked ShoppingList Item Bool
+    | ItemDeleted ShoppingList Item
+    | ClearCheckedItems ShoppingList
+    | MessageReceived String
+
+
 type alias Model =
     { shoppingLists : List ShoppingList
     , clientId : Maybe ClientId
