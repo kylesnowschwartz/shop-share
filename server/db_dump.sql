@@ -15,17 +15,31 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+--
+-- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+
+
+--
+-- Name: EXTENSION "uuid-ossp"; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION "uuid-ossp" IS 'generate universally unique identifiers (UUIDs)';
 
 
 SET search_path = public, pg_catalog;
@@ -35,117 +49,108 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
+-- Name: clients; Type: TABLE; Schema: public; Owner: shopshare
+--
+
+CREATE TABLE clients (
+    id integer NOT NULL
+);
+
+
+ALTER TABLE clients OWNER TO shopshare;
+
+--
+-- Name: clients_id_seq; Type: SEQUENCE; Schema: public; Owner: shopshare
+--
+
+CREATE SEQUENCE clients_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE clients_id_seq OWNER TO shopshare;
+
+--
+-- Name: clients_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: shopshare
+--
+
+ALTER SEQUENCE clients_id_seq OWNED BY clients.id;
+
+
+--
 -- Name: items; Type: TABLE; Schema: public; Owner: shopshare
 --
 
 CREATE TABLE items (
-    id integer NOT NULL,
-    description text,
+    text text,
     completed boolean DEFAULT false NOT NULL,
-    list_id integer
+    list_id integer NOT NULL,
+    id uuid DEFAULT uuid_generate_v4() NOT NULL
 );
 
 
 ALTER TABLE items OWNER TO shopshare;
 
 --
--- Name: items_id_seq; Type: SEQUENCE; Schema: public; Owner: shopshare
---
-
-CREATE SEQUENCE items_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE items_id_seq OWNER TO shopshare;
-
---
--- Name: items_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: shopshare
---
-
-ALTER SEQUENCE items_id_seq OWNED BY items.id;
-
-
---
 -- Name: lists; Type: TABLE; Schema: public; Owner: shopshare
 --
 
 CREATE TABLE lists (
-    id integer NOT NULL,
-    title character varying(100)
+    title character varying(100),
+    id uuid DEFAULT uuid_generate_v4() NOT NULL
 );
 
 
 ALTER TABLE lists OWNER TO shopshare;
 
 --
--- Name: lists_id_seq; Type: SEQUENCE; Schema: public; Owner: shopshare
+-- Name: clients id; Type: DEFAULT; Schema: public; Owner: shopshare
 --
 
-CREATE SEQUENCE lists_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE lists_id_seq OWNER TO shopshare;
-
---
--- Name: lists_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: shopshare
---
-
-ALTER SEQUENCE lists_id_seq OWNED BY lists.id;
+ALTER TABLE ONLY clients ALTER COLUMN id SET DEFAULT nextval('clients_id_seq'::regclass);
 
 
 --
--- Name: items id; Type: DEFAULT; Schema: public; Owner: shopshare
+-- Data for Name: clients; Type: TABLE DATA; Schema: public; Owner: shopshare
 --
 
-ALTER TABLE ONLY items ALTER COLUMN id SET DEFAULT nextval('items_id_seq'::regclass);
+COPY clients (id) FROM stdin;
+1
+\.
 
 
 --
--- Name: lists id; Type: DEFAULT; Schema: public; Owner: shopshare
+-- Name: clients_id_seq; Type: SEQUENCE SET; Schema: public; Owner: shopshare
 --
 
-ALTER TABLE ONLY lists ALTER COLUMN id SET DEFAULT nextval('lists_id_seq'::regclass);
+SELECT pg_catalog.setval('clients_id_seq', 1, false);
 
 
 --
 -- Data for Name: items; Type: TABLE DATA; Schema: public; Owner: shopshare
 --
 
-COPY items (id, description, completed, list_id) FROM stdin;
-1	Milk	f	1
+COPY items (text, completed, list_id, id) FROM stdin;
 \.
-
-
---
--- Name: items_id_seq; Type: SEQUENCE SET; Schema: public; Owner: shopshare
---
-
-SELECT pg_catalog.setval('items_id_seq', 1, true);
 
 
 --
 -- Data for Name: lists; Type: TABLE DATA; Schema: public; Owner: shopshare
 --
 
-COPY lists (id, title) FROM stdin;
-1	Test shopping list
+COPY lists (title, id) FROM stdin;
 \.
 
 
 --
--- Name: lists_id_seq; Type: SEQUENCE SET; Schema: public; Owner: shopshare
+-- Name: clients clients_pkey; Type: CONSTRAINT; Schema: public; Owner: shopshare
 --
 
-SELECT pg_catalog.setval('lists_id_seq', 1, true);
+ALTER TABLE ONLY clients
+    ADD CONSTRAINT clients_pkey PRIMARY KEY (id);
 
 
 --
@@ -162,14 +167,6 @@ ALTER TABLE ONLY items
 
 ALTER TABLE ONLY lists
     ADD CONSTRAINT lists_pkey PRIMARY KEY (id);
-
-
---
--- Name: items items_list_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: shopshare
---
-
-ALTER TABLE ONLY items
-    ADD CONSTRAINT items_list_id_fkey FOREIGN KEY (list_id) REFERENCES lists(id);
 
 
 --

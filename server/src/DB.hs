@@ -6,6 +6,7 @@ import           Control.Exception               (bracket)
 import           Data.ByteString.Internal        (ByteString)
 import           Data.Maybe                      (listToMaybe)
 import           Data.Text                       (Text)
+import           Data.UUID                       (UUID)
 import qualified Database.PostgreSQL.Simple      as PG
 import           Database.PostgreSQL.Transaction
 import           Types
@@ -44,23 +45,23 @@ insertList title' = do
   list <- query (PG.Only title') "INSERT INTO lists VALUES (DEFAULT, ?) RETURNING id, title"
   return $ listToMaybe list
 
-deleteList :: Integer -> PGTransaction ()
+deleteList :: UUID -> PGTransaction ()
 deleteList listId' = do
   _ <- execute (PG.Only listId') "DELETE FROM items WHERE list_id = ?"
   _ <- execute (PG.Only listId') "DELETE FROM lists WHERE id = ?"
   return ()
 
-updateList :: Text -> Integer -> PGTransaction (Maybe List)
+updateList :: Text -> UUID -> PGTransaction (Maybe List)
 updateList newTitle id' = do
   list <- query (newTitle, id') "UPDATE lists SET title = ? WHERE id = ? RETURNING id, title"
   return $ listToMaybe list
 
-insertItem :: Text -> Integer -> PGTransaction (Maybe Item)
+insertItem :: Text -> UUID -> PGTransaction (Maybe Item)
 insertItem title' listId' = do
   item <- query (title', listId') "INSERT INTO items VALUES (DEFAULT, ?, false, ?) RETURNING id, text, completed, list_id"
   return $ listToMaybe item
 
-updateItem :: Text -> Integer -> PGTransaction (Maybe Item)
+updateItem :: Text -> UUID -> PGTransaction (Maybe Item)
 updateItem newText id' = do
   item <- query (newText, id') "UPDATE items SET text = ? WHERE id = ? RETURNING id, text, completed, list_id"
   return $ listToMaybe item

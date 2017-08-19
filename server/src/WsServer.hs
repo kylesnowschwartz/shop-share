@@ -4,7 +4,6 @@
 module WsServer where
 
 import           Control.Concurrent            (MVar, modifyMVar_, readMVar)
-
 import qualified Control.Exception             as Exception
 import           Control.Monad                 (forM_, forever)
 import           Data.ByteString               (ByteString)
@@ -12,7 +11,10 @@ import qualified Data.ByteString.Lazy.Internal as LazyByteString
 import           Data.Set                      (Set)
 import qualified Data.Set                      as Set
 import qualified Data.Text                     as Text
+import           Data.UUID                     (UUID)
+import           Data.UUID.V4                  (nextRandom)
 import           DB
+import           JSON
 import qualified Network.WebSockets            as WS
 import           Types
 
@@ -22,9 +24,7 @@ wsApp stateMVar pending = do
   connection <- WS.acceptRequest pending
   WS.forkPingThread connection 30
   msg <- WS.receiveData connection
-  state <- readMVar stateMVar
-
-  let client = Client (nextClientId state) connection
+  client <- Client <$> nextClientId <*> return connection
 
   case decodeAction msg of
     Right Register ->
@@ -36,12 +36,9 @@ wsApp stateMVar pending = do
 
     Left err -> WS.sendTextData connection $ encodeError $ Text.pack err
 
-nextClientId :: State -> Integer
-nextClientId state =
-  if Set.null cs
-  then 1
-  else clientId (Set.findMax cs) + 1
-  where cs = clients state
+nextClientId :: IO UUID
+nextClientId =
+  nextRandom
 
 connect :: MVar State -> Client -> IO ()
 connect stateMVar client@Client{..} = do
@@ -89,6 +86,9 @@ performAction action =
 
     UpdateItemText newText id' ->
       encodeActionIfSuccess action <$> runDB (updateItem newText id')
+
+    Register ->
+      return $ encodeError $ Text.pack "You're already registered on this connection!"
 
     _ ->
       return $ encodeError $ Text.pack "Action not yet built. Sorry!"

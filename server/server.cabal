@@ -19,8 +19,9 @@ library
                      , Types
                      , HttpServer
                      , WsServer
+                     , JSON
   build-depends:       base >= 4.7 && < 5
-                     , aeson
+                     , aeson >= 1.2.1.0
                      , bytestring
                      , containers
                      , http-types
@@ -28,9 +29,11 @@ library
                      , postgresql-simple
                      , postgresql-transactional
                      , hspec
-                     , servant
-                     , servant-server
+                     , servant >= 0.11
+                     , servant-server >= 0.11
                      , text
+                     , uuid
+                     , uuid-types
                      , wai
                      , wai-logger
                      , wai-middleware-static

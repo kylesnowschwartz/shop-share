@@ -33,5 +33,5 @@ api = getLists
 isRequestForIndex :: Wai.Request -> Bool
 isRequestForIndex request = null (Wai.pathInfo request)
 
-getLists :: ExceptT ServantErr IO [List]
+getLists :: Handler [List]
 getLists = liftIO . DB.runDB $ DB.selectAllLists
