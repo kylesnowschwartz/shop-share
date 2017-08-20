@@ -30,6 +30,7 @@ type Action
     | UpdateList ShoppingList
     | CreateItem Item
     | UpdateItem Item
+    | DeleteItem Item
 
 
 

@@ -186,6 +186,14 @@ encodeActionTypeAndData action =
                     ( "UpdateItem"
                     , [ ( "item", encodeItem item ) ]
                     )
+
+                DeleteItem item ->
+                    ( "DeleteItem"
+                    , [ ( "itemId"
+                        , Encode.string (itemId item)
+                        )
+                      ]
+                    )
     in
         object
             [ ( "type", Encode.string actionType )
