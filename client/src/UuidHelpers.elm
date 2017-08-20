@@ -5,6 +5,7 @@ import Random.Pcg as Pcg
 import Types exposing (..)
 
 
+uuidSeedFromInt : Int -> Pcg.Seed
 uuidSeedFromInt =
     Pcg.initialSeed
 
