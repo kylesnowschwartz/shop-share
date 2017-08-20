@@ -71,8 +71,8 @@ performAction action =
     GetLists ->
       confirmActionAndReturnAllLists
 
-    CreateList title -> do
-      _ <- runDB (insertList title)
+    CreateList listId -> do
+      _ <- runDB (insertList listId)
       confirmActionAndReturnAllLists
 
     DeleteList listId' -> do
@@ -80,15 +80,15 @@ performAction action =
       confirmActionAndReturnAllLists
 
     UpdateListTitle newTitle id' -> do
-      _ <- runDB (updateList newTitle id')
+      _ <- runDB (updateListTitle newTitle id')
       confirmActionAndReturnAllLists
 
-    CreateItem itemText listId' -> do
-      _ <- runDB (insertItem itemText listId')
+    CreateItem item -> do
+      _ <- runDB (insertItem item)
       confirmActionAndReturnAllLists
 
-    UpdateItemText newText id' -> do
-      _ <- runDB (updateItem newText id')
+    UpdateItem item -> do
+      _ <- runDB (updateItem item)
       confirmActionAndReturnAllLists
 
     Register ->

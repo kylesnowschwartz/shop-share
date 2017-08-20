@@ -23,23 +23,27 @@ encodeActionConfirmation action value =
     , "data" .= JSON.object data'
     ]
   ]
-  where (actionType, data') =
+  where
+    updatedLists = [ "lists" .= value ]
+    (actionType, data') =
           case action of
-            Register              ->
+            Register ->
               ("Register", [ "clientId" .= value ])
-            GetLists              ->
-              ("GetLists", [ "lists" .= value ])
-            (CreateList _)        ->
-              ("CreateList", [ "lists" .= value ])
-            (DeleteList _)         ->
-              ("DeleteList", [ "lists" .= value ])
+            GetLists ->
+              ("GetLists", updatedLists)
+            (CreateList _) ->
+              ("CreateList", updatedLists)
+            (DeleteList _) ->
+              ("DeleteList", updatedLists)
             (UpdateListTitle _ _) ->
-              ("UpdateListTitle", [ "lists" .= value ])
-            (CreateItem _ _)      ->
-              ("CreateItem", [ "lists" .= value ])
-            (UpdateItemText _ _)  ->
-              ("UpdateItemText", [ "lists" .= value ])
-            (SubscribeToList _)   ->
+              ("UpdateList", updatedLists)
+            (CreateItem _) ->
+              ("CreateItem", updatedLists)
+            (UpdateItem _) ->
+              ("UpdateItem", updatedLists)
+            (DeleteItem _) ->
+              ("DeleteItem", updatedLists)
+            (SubscribeToList _) ->
               ("SubscribeToList", [])
 
 encodeActionIfSuccess :: ToJSON v => Action -> Maybe v -> LazyByteString.ByteString

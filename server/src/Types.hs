@@ -59,12 +59,14 @@ instance FromRow Item
 
 data Action = Register
             | GetLists
-            | CreateList Text
-            | DeleteList UUID
+            | CreateList UUID
             | UpdateListTitle Text UUID
-            | CreateItem Text UUID
-            | UpdateItemText Text UUID
-            | SubscribeToList Text deriving (Generic, Show)
+            | DeleteList UUID
+            | CreateItem Item
+            | UpdateItem Item
+            | DeleteItem UUID
+            | SubscribeToList Text
+            deriving (Generic, Show)
 
 instance FromJSON Action where
   parseJSON = JSON.withObject "action" $ \obj -> do
@@ -72,13 +74,19 @@ instance FromJSON Action where
     actionType <- action .: "type"
     data' <- action .: "data"
 
+    let item = Item <$>
+          data' .: "itemId" <*>
+          data' .: "text" <*>
+          data' .: "completed" <*>
+          data' .: "listId"
+
     case actionType of
       "Register"        -> pure Register
       "GetLists"        -> pure GetLists
       "CreateList"      -> CreateList <$> data' .: "title"
       "DeleteList"      -> DeleteList <$> data' .: "listId"
       "UpdateListTitle" -> UpdateListTitle <$> data' .: "title" <*> data' .: "listId"
-      "CreateItem"      -> CreateItem <$> data' .: "text" <*> data' .: "listId"
-      "UpdateItemText"  -> UpdateItemText <$> data' .: "text" <*> data' .: "itemId"
+      "CreateItem"      -> CreateItem <$> item
+      "UpdateItem"      -> UpdateItem <$> item
       "SubscribeToList" -> SubscribeToList <$> data' .: "listId"
       _                 -> fail ("unknown action type: " ++ actionType)

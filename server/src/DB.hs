@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards   #-}
 
 module DB where
 
@@ -40,9 +41,9 @@ selectItemsForList list = do
   listItems <- query (PG.Only $ listId list) queryStr
   return list { items = listItems }
 
-insertList :: Text -> PGTransaction (Maybe List)
-insertList title' = do
-  list <- query (PG.Only title') "INSERT INTO lists VALUES (DEFAULT, ?) RETURNING id, title"
+insertList :: UUID -> PGTransaction (Maybe List)
+insertList listId = do
+  list <- query (PG.Only listId) "INSERT INTO lists VALUES (?, DEFAULT) RETURNING id, title"
   return $ listToMaybe list
 
 deleteList :: UUID -> PGTransaction ()
@@ -51,17 +52,19 @@ deleteList listId' = do
   _ <- execute (PG.Only listId') "DELETE FROM lists WHERE id = ?"
   return ()
 
-updateList :: Text -> UUID -> PGTransaction (Maybe List)
-updateList newTitle id' = do
+updateListTitle :: Text -> UUID -> PGTransaction (Maybe List)
+updateListTitle newTitle id' = do
   list <- query (newTitle, id') "UPDATE lists SET title = ? WHERE id = ? RETURNING id, title"
   return $ listToMaybe list
 
-insertItem :: Text -> UUID -> PGTransaction (Maybe Item)
-insertItem title' listId' = do
-  item <- query (title', listId') "INSERT INTO items VALUES (DEFAULT, ?, false, ?) RETURNING id, text, completed, list_id"
+insertItem :: Item -> PGTransaction (Maybe Item)
+insertItem Item{..} = do
+  let queryStr = "INSERT INTO items VALUES (?, ?, ?, ?) RETURNING id, text, completed, list_id"
+  item <- query (itemId, text, completed, listsId) queryStr
   return $ listToMaybe item
 
-updateItem :: Text -> UUID -> PGTransaction (Maybe Item)
-updateItem newText id' = do
-  item <- query (newText, id') "UPDATE items SET text = ? WHERE id = ? RETURNING id, text, completed, list_id"
+updateItem :: Item -> PGTransaction (Maybe Item)
+updateItem Item{..} = do
+  let queryStr = "UPDATE items SET text = ?, completed = ?, list_id = ? WHERE id = ? RETURNING id, text, completed, list_id"
+  item <- query (text, completed, listsId, itemId) queryStr
   return $ listToMaybe item

@@ -58,13 +58,14 @@ Server -> Client
     "data": {
       "lists": [
         {
-          "listId": 1,
+          "listId": "55a82a71-1d8a-4abd-9aa1-29b351766c48",
           "title": "Test shopping list",
           "items": [
             {
-              "itemId": 1,
+              "itemId": "5835ac49-559f-42d6-b9b1-c3695fe8fa61",
               "text": "Get some Haskell down ya",
-              "completed": false
+              "completed": false,
+              "listId": "55a82a71-1d8a-4abd-9aa1-29b351766c48"
             }
           ]
         }
@@ -83,7 +84,7 @@ Client -> Server
   "action": {
     "type": "CreateList",
     "data": {
-      "title": "Foo bar list"
+      "listId": "55a82a71-1d8a-4abd-9aa1-29b351766c48"
     }
   }
 }
@@ -95,42 +96,7 @@ Server -> Client
   "confirmAction": {
     "type": "CreateList",
     "data": {
-      "list": {
-        "items": [],
-        "listId": 12,
-        "title": "New fucking list, brah!"
-      }
-    }
-  }
-}
-```
-
-
-## DeleteList
-
-Client -> Server
-```js
-{
-  "action": {
-    "type": "DeleteList",
-    "data": {
-      "listId": 9
-    }
-  }
-}
-```
-
-Server -> Client
-```js
-{
-  "confirmAction": {
-    "type": "GetLists",
-    "data": {
-      "lists": [{
-        "items": [],
-        "listId": 1,
-        "title": "Test shopping list"
-      }]
+      "lists": [ ... ]
     }
   }
 }
@@ -145,7 +111,7 @@ Client -> Server
   "action": {
     "type": "UpdateListTitle",
     "data": {
-      "listId": 1,
+      "listId": "55a82a71-1d8a-4abd-9aa1-29b351766c48",
       "title": "New title"
     }
   }
@@ -158,11 +124,34 @@ Server -> Client
   "confirmAction": {
     "type": "UpdateListTitle",
     "data": {
-      "list": {
-        "items": [],
-        "listId": 1,
-        "title": "New title"
-      }
+      "lists": [ ... ]
+    }
+  }
+}
+```
+
+
+## DeleteList
+
+Client -> Server
+```js
+{
+  "action": {
+    "type": "DeleteList",
+    "data": {
+      "listId": "55a82a71-1d8a-4abd-9aa1-29b351766c48"
+    }
+  }
+}
+```
+
+Server -> Client
+```js
+{
+  "confirmAction": {
+    "type": "GetLists",
+    "data": {
+      "lists": [ ... ]
     }
   }
 }
@@ -176,8 +165,12 @@ Client -> Server
   "action": {
     "type": "CreateItem",
     "data": {
-      "text": "",
-      "listId": 1
+      "item": {
+        "itemId": "51f66427-48a4-4495-b778-f956b4f23754",
+        "text": "",
+        "completed": false,
+        "listId": "5f74b6c4-2ac6-44d3-abfa-1757d7a2d3be"
+      }
     }
   }
 }
@@ -189,18 +182,13 @@ Server -> Client
   "confirmAction": {
     "type": "CreateItem",
     "data": {
-      "item": {
-        "listsId": 1,
-        "text": "item for list 1",
-        "itemId": 3,
-        "completed": false
-      }
+      "lists": [ ... ]
     }
   }
 }
 ```
 
-## UpdateItemText
+## UpdateItem
 
 Client -> Server
 ```js
@@ -208,8 +196,12 @@ Client -> Server
   "action": {
     "type": "UpdateItemText",
     "data": {
-      "text": "foo bar",
-      "itemId": 1
+      "item": {
+        "itemId": "51f66427-48a4-4495-b778-f956b4f23754",
+        "text": "New text",
+        "completed": true,
+        "listId": "5f74b6c4-2ac6-44d3-abfa-1757d7a2d3be"
+      }
     }
   }
 }
@@ -221,12 +213,7 @@ Server -> Client
   "confirmAction": {
     "type": "UpdateItemText",
     "data": {
-      "item": {
-        "listsId": 1,
-        "text": "foo bar",
-        "itemId": 1,
-        "completed": false
-      }
+      "lists": [ ... ]
     }
   }
 }
