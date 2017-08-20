@@ -5,28 +5,11 @@ import List.Extra exposing (..)
 import UuidHelpers exposing (..)
 
 
-listForItem : Model -> Item -> Maybe ShoppingList
-listForItem model item =
-    find (\l -> l.id == item.listId) model.shoppingLists
-
-
-updateItem : Item -> Maybe ShoppingList -> Maybe ShoppingList
-updateItem updatedItem list =
-    let
-        f l =
-            { l | listItems = List.map (replaceIfUpdated updatedItem) l.listItems }
-    in
-        Maybe.map f list
-
-
-deleteItem : Item -> Maybe ShoppingList -> Maybe ShoppingList
-deleteItem item list =
-    Maybe.map (\l -> { l | listItems = remove item l.listItems }) list
-
-
-updateShoppingList : ShoppingList -> Model -> Model
-updateShoppingList updatedList model =
-    { model | shoppingLists = List.map (replaceIfUpdated updatedList) model.shoppingLists }
+replaceList : ShoppingList -> Model -> Model
+replaceList updatedList model =
+    { model
+        | shoppingLists = List.map (replaceIfUpdated updatedList) model.shoppingLists
+    }
 
 
 replaceIfUpdated : { a | id : b } -> { a | id : b } -> { a | id : b }
@@ -35,6 +18,35 @@ replaceIfUpdated updated a =
         updated
     else
         a
+
+
+editListTitle : Model -> ShoppingList -> String -> ( Model, ShoppingList )
+editListTitle model list newTitle =
+    let
+        updatedList =
+            { list | title = newTitle }
+    in
+        ( replaceList updatedList model, updatedList )
+
+
+deleteList : Model -> ShoppingList -> Model
+deleteList model list =
+    { model | shoppingLists = List.Extra.remove list model.shoppingLists }
+
+
+updateItem : Item -> ShoppingList -> ShoppingList
+updateItem updatedItem list =
+    { list | listItems = List.map (replaceIfUpdated updatedItem) list.listItems }
+
+
+deleteItem : Item -> ShoppingList -> ShoppingList
+deleteItem item list =
+    { list | listItems = remove item list.listItems }
+
+
+listForItem : Model -> Item -> Maybe ShoppingList
+listForItem model item =
+    find (\l -> l.id == item.listId) model.shoppingLists
 
 
 createListWithNewUuid : Model -> ( Model, ShoppingList )
@@ -61,4 +73,4 @@ createItemWithNewUuid model list =
         updatedList =
             { list | listItems = list.listItems ++ [ newItem ] }
     in
-        ( updateShoppingList updatedList modelWithNewSeed, newItem )
+        ( replaceList updatedList modelWithNewSeed, newItem )

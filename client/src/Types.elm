@@ -11,15 +11,15 @@ type Msg
     | DeleteListClicked ShoppingList
     | ListTitleEdited ShoppingList String
     | CreateItemClicked ShoppingList
-    | ItemTextEdited Item String
-    | ItemChecked Item Bool
-    | DeleteItemClicked Item
+    | ItemTextEdited ShoppingList Item String
+    | ItemChecked ShoppingList Item Bool
+    | DeleteItemClicked ShoppingList Item
     | ClearCheckedItems ShoppingList
     | WSMessageReceived String
 
 
 
--- An Action is something we want to perform on the server:
+-- An Action is something we want to perform on the server.
 
 
 type Action
@@ -34,7 +34,7 @@ type Action
 
 
 
--- An Event is something that happened on the server:
+-- An Event is something that happened on the server.
 
 
 type Event
