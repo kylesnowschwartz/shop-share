@@ -3,19 +3,18 @@ module ShopShare exposing (init, subscriptions, update, view)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onCheck, onClick, onFocus)
-import JSON
 import List.Extra exposing (..)
-import Types exposing (..)
-import UuidHelpers exposing (..)
 import WebSocket as WS
+import Action exposing (publishAction)
+import Config exposing (wsAddress)
+import Event exposing (handleEvent)
+import JSON
+import Types exposing (..)
+import UpdateHelpers exposing (..)
+import UuidHelpers exposing (..)
 
 
 -- MODEL
-
-
-wsAddress : String
-wsAddress =
-    "ws://localhost:8000"
 
 
 init : Int -> ( Model, Cmd Msg )
@@ -25,7 +24,7 @@ init randomNumber =
     , errorMessage = Nothing
     , uuidSeed = uuidSeedFromInt randomNumber
     }
-        ! [ sendActionToServer Register ]
+        ! [ publishAction Register ]
 
 
 
@@ -37,172 +36,69 @@ update msg model =
     case msg of
         CreateListClicked ->
             let
-                ( modelWithNewSeed, newUuid ) =
-                    stepUuid model
-
-                newList =
-                    { id = ListId newUuid, title = "", listItems = [] }
+                ( newModel, newList ) =
+                    createListWithNewUuid model
             in
-                { modelWithNewSeed | shoppingLists = model.shoppingLists ++ [ newList ] }
-                    ! [ sendActionToServer (CreateList newList) ]
+                newModel ! [ publishAction (CreateList newList) ]
 
         DeleteListClicked list ->
-            { model | shoppingLists = List.Extra.remove list model.shoppingLists }
-                ! [ sendActionToServer (DeleteList list) ]
-
-        ListTitleEdited list newTitle ->
-            { model | shoppingLists = updateShoppingList model list.id (updateTitle newTitle) }
-                ! [ sendActionToServer (UpdateList list) ]
+            (deleteList model list) ! [ publishAction (DeleteList list) ]
 
         CreateItemClicked list ->
             let
-                ( modelWithNewSeed, newUuid ) =
-                    stepUuid model
-
-                newItem =
-                    { id = ItemId newUuid, text = "", completed = False, listId = list.id }
+                ( newModel, newItem ) =
+                    createItemWithNewUuid model list
             in
-                { modelWithNewSeed | shoppingLists = updateShoppingList model list.id (addItem newItem) }
-                    ! [ sendActionToServer (CreateItem newItem) ]
+                newModel ! [ publishAction (CreateItem newItem) ]
 
-        -- TODO: Can simplify editItem etc. now that we're storing listId on Item.
-        ItemTextEdited item newItemText ->
-            { model | shoppingLists = updateShoppingList model item.listId (editItem newItemText item.id) }
-                ! [ sendActionToServer (UpdateItem { item | text = newItemText }) ]
+        ListTitleEdited list newTitle ->
+            let
+                ( newModel, updatedList ) =
+                    editListTitle model list newTitle
+            in
+                newModel ! [ publishAction (UpdateList updatedList) ]
 
-        ItemChecked item itemChecked ->
-            { model | shoppingLists = updateShoppingList model item.listId (checkItem itemChecked item) }
-                ! []
+        ItemTextEdited list item newItemText ->
+            let
+                updatedItem =
+                    { item | text = newItemText }
+            in
+                replaceList (updateItem updatedItem list) model
+                    ! [ publishAction (UpdateItem updatedItem) ]
 
-        DeleteItemClicked deletedItem ->
-            { model | shoppingLists = updateShoppingList model deletedItem.listId (deleteItem deletedItem) }
-                ! []
+        ItemChecked list item itemChecked ->
+            let
+                updatedItem =
+                    { item | completed = itemChecked }
+            in
+                replaceList (updateItem updatedItem list) model
+                    ! [ publishAction (UpdateItem updatedItem) ]
 
-        ClearCheckedItems updatedList ->
-            { model | shoppingLists = updateShoppingList model updatedList.id clearCheckedItems }
-                ! []
+        DeleteItemClicked list deletedItem ->
+            replaceList (deleteItem deletedItem list) model
+                ! [ publishAction (DeleteItem deletedItem) ]
+
+        ClearCheckedItems list ->
+            let
+                updatedList =
+                    { list
+                        | listItems = List.Extra.filterNot .completed list.listItems
+                    }
+            in
+                replaceList updatedList model ! []
 
         WSMessageReceived message ->
             handleMessage model message
 
 
-createList : Model -> ( Model, Cmd Msg )
-createList model =
-    let
-        ( modelWithNewSeed, newUuid ) =
-            stepUuid model
-
-        newList =
-            { id = ListId newUuid, title = "", listItems = [] }
-    in
-        { modelWithNewSeed | shoppingLists = model.shoppingLists ++ [ newList ] }
-            ! [ sendActionToServer (CreateList newList) ]
-
-
-sendActionToServer : Action -> Cmd Msg
-sendActionToServer action =
-    WS.send wsAddress (JSON.encodeAction action)
-
-
 handleMessage : Model -> String -> ( Model, Cmd Msg )
 handleMessage model message =
-    let
-        fetchAllLists =
-            model ! [ sendActionToServer GetLists ]
-    in
-        case JSON.decodeEvent message of
-            Ok action ->
-                case action of
-                    Registered newId ->
-                        { model | clientId = Just newId }
-                            ! [ sendActionToServer GetLists ]
+    case JSON.decodeEvent message of
+        Ok event ->
+            handleEvent model event
 
-                    GotLists lists ->
-                        { model | shoppingLists = orderListsAndTheirItems lists } ! []
-
-                    CreatedList newList ->
-                        fetchAllLists
-
-                    DeletedList _ ->
-                        fetchAllLists
-
-                    UpdatedListTitle _ ->
-                        fetchAllLists
-
-                    CreatedItem _ ->
-                        fetchAllLists
-
-                    UpdatedItemText _ ->
-                        fetchAllLists
-
-            Err err ->
-                { model | errorMessage = Just err } ! []
-
-
-orderListsAndTheirItems : List ShoppingList -> List ShoppingList
-orderListsAndTheirItems =
-    (List.sortBy listId) << (List.map sortItems)
-
-
-sortItems : ShoppingList -> ShoppingList
-sortItems list =
-    { list | listItems = List.sortBy itemId list.listItems }
-
-
-clearCheckedItems : ShoppingList -> ShoppingList
-clearCheckedItems list =
-    { list | listItems = List.Extra.filterNot .completed list.listItems }
-
-
-updateTitle : String -> ShoppingList -> ShoppingList
-updateTitle newTitle list =
-    { list | title = newTitle }
-
-
-addItem : Item -> ShoppingList -> ShoppingList
-addItem item list =
-    { list | listItems = list.listItems ++ [ item ] }
-
-
-editItem : String -> ItemId -> ShoppingList -> ShoppingList
-editItem newItemText newItemId list =
-    let
-        applyIfEdited item =
-            if item.id == newItemId then
-                { item | text = newItemText }
-            else
-                item
-    in
-        { list | listItems = List.map applyIfEdited list.listItems }
-
-
-checkItem : Bool -> Item -> ShoppingList -> ShoppingList
-checkItem itemChecked itemToCheck list =
-    let
-        applyIfChecked item =
-            if item.id == itemToCheck.id then
-                { item | completed = itemChecked }
-            else
-                item
-    in
-        { list | listItems = List.map applyIfChecked list.listItems }
-
-
-deleteItem : Item -> ShoppingList -> ShoppingList
-deleteItem deletedItem list =
-    { list | listItems = List.Extra.remove deletedItem list.listItems }
-
-
-updateShoppingList : Model -> ListId -> (ShoppingList -> ShoppingList) -> List ShoppingList
-updateShoppingList model updatedListId updateFunction =
-    let
-        filteredUpdate list =
-            if list.id == updatedListId then
-                updateFunction list
-            else
-                list
-    in
-        List.map filteredUpdate model.shoppingLists
+        Err err ->
+            { model | errorMessage = Just err } ! []
 
 
 
@@ -259,10 +155,10 @@ viewShoppingList list =
 viewListItem : ShoppingList -> Item -> Html Msg
 viewListItem list item =
     dd []
-        [ input [ tabindex 2, placeholder "Item name", value item.text, onInput (ItemTextEdited item) ] []
+        [ input [ tabindex 2, placeholder "Item name", value item.text, onInput (ItemTextEdited list item) ] []
         , label [ class "checkbox" ]
-            [ input [ type_ "checkbox", checked item.completed, Html.Events.onCheck (ItemChecked item) ] [] ]
-        , a [ tabindex -1, class "delete is-small", onClick (DeleteItemClicked item) ] []
+            [ input [ type_ "checkbox", checked item.completed, Html.Events.onCheck (ItemChecked list item) ] [] ]
+        , a [ tabindex -1, class "delete is-small", onClick (DeleteItemClicked list item) ] []
         ]
 
 
