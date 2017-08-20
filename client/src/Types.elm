@@ -1,46 +1,39 @@
 module Types exposing (..)
 
+-- TODO: Make shoppingLists & listItems Sets instead of Lists
+
 import Uuid as Uuid exposing (Uuid)
 import Random.Pcg as Pcg
 
 
--- TODO: Make shoppingLists & listItems Sets instead of Lists
-
-
 type Msg
+    = CreateListClicked
+    | DeleteListClicked ShoppingList
+    | ListTitleEdited ShoppingList String
+    | CreateItemClicked ShoppingList
+    | ItemTextEdited Item String
+    | ItemChecked Item Bool
+    | DeleteItemClicked Item
+    | ClearCheckedItems ShoppingList
+    | WSMessageReceived String
+
+
+
+-- An Action is something we want to perform on the server:
+
+
+type Action
     = Register
     | GetLists
-    | CreateNewList
+    | CreateList ShoppingList
     | DeleteList ShoppingList
-    | ShoppingListTitleEdited ShoppingList String
-    | ItemAdded ShoppingList
-    | ItemTextEdited ShoppingList Item String
-    | ItemChecked ShoppingList Item Bool
-    | ItemDeleted ShoppingList Item
-    | ClearCheckedItems ShoppingList
-    | MessageReceived String
+    | UpdateList ShoppingList
+    | CreateItem Item
+    | UpdateItem Item
 
 
-type alias Model =
-    { shoppingLists : List ShoppingList
-    , clientId : Maybe ClientId
-    , errorMessage : Maybe String
-    , uuidSeed : Pcg.Seed
-    }
 
-
-type alias ShoppingList =
-    { id : ShoppingListId
-    , title : String
-    , listItems : List Item
-    }
-
-
-type alias Item =
-    { id : ItemId
-    , text : String
-    , completed : Bool
-    }
+-- An Event is something that happened on the server:
 
 
 type Event
@@ -53,8 +46,31 @@ type Event
     | UpdatedItemText (List ShoppingList)
 
 
-type ShoppingListId
-    = ShoppingListId Uuid
+type alias Model =
+    { shoppingLists : List ShoppingList
+    , clientId : Maybe ClientId
+    , errorMessage : Maybe String
+    , uuidSeed : Pcg.Seed
+    }
+
+
+type alias ShoppingList =
+    { id : ListId
+    , title : String
+    , listItems : List Item
+    }
+
+
+type alias Item =
+    { id : ItemId
+    , text : String
+    , completed : Bool
+    , listId : ListId
+    }
+
+
+type ListId
+    = ListId Uuid
 
 
 type ItemId

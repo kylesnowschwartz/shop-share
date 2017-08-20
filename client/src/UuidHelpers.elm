@@ -18,15 +18,29 @@ stepUuid model =
         ( { model | uuidSeed = newSeed }, newUuid )
 
 
-listIdToString : ShoppingList -> String
-listIdToString list =
+listId : ShoppingList -> String
+listId list =
     case list.id of
-        ShoppingListId uuid ->
+        ListId uuid ->
             Uuid.toString uuid
 
 
-itemIdToString : Item -> String
-itemIdToString item =
+listIdToString : ListId -> String
+listIdToString listId =
+    case listId of
+        ListId uuid ->
+            Uuid.toString uuid
+
+
+itemId : Item -> String
+itemId item =
     case item.id of
+        ItemId uuid ->
+            Uuid.toString uuid
+
+
+itemIdToString : ItemId -> String
+itemIdToString itemId =
+    case itemId of
         ItemId uuid ->
             Uuid.toString uuid

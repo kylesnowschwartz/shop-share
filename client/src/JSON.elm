@@ -92,7 +92,7 @@ decodeUpdatedItemTextEvent =
 decodeShoppingList : Decoder ShoppingList
 decodeShoppingList =
     decode ShoppingList
-        |> required "listId" (map ShoppingListId uuid)
+        |> required "listId" (map ListId uuid)
         |> required "title" Decode.string
         |> required "items" (Decode.list decodeItem)
 
@@ -103,6 +103,7 @@ decodeItem =
         |> required "itemId" (map ItemId uuid)
         |> required "text" Decode.string
         |> required "completed" Decode.bool
+        |> required "listsId" (map ListId uuid)
 
 
 uuid : Decoder Uuid
@@ -123,33 +124,88 @@ uuid =
 -- ENCODING
 
 
-encodeMsg : Msg -> Encode.Value -> String
-encodeMsg msg msgData =
+encodeAction : Action -> String
+encodeAction action =
     encode 0
         (object
             [ ( "action"
-              , object
-                    [ ( "type", Encode.string (msgToActionType msg) )
-                    , ( "data", msgData )
-                    ]
+              , (encodeActionTypeAndData action)
               )
             ]
         )
 
 
+encodeActionTypeAndData : Action -> Encode.Value
+encodeActionTypeAndData action =
+    let
+        ( actionType, actionData ) =
+            case action of
+                Register ->
+                    ( "Register"
+                    , []
+                    )
+
+                GetLists ->
+                    ( "GetLists"
+                    , []
+                    )
+
+                CreateList list ->
+                    ( "CreateList"
+                    , [ ( "listId"
+                        , Encode.string (listId list)
+                        )
+                      ]
+                    )
+
+                DeleteList list ->
+                    ( "DeleteList"
+                    , [ ( "listId"
+                        , Encode.string (listId list)
+                        )
+                      ]
+                    )
+
+                UpdateList list ->
+                    ( "UpdateList"
+                    , [ ( "list", encodeList list ) ]
+                    )
+
+                CreateItem item ->
+                    ( "CreateItem"
+                    , [ ( "itemId"
+                        , Encode.string (itemId item)
+                        )
+                      , ( "listId"
+                        , Encode.string (listIdToString item.listId)
+                        )
+                      ]
+                    )
+
+                UpdateItem item ->
+                    ( "UpdateItem"
+                    , [ ( "item", encodeItem item ) ]
+                    )
+    in
+        object
+            [ ( "type", Encode.string actionType )
+            , ( "data", object actionData )
+            ]
+
+
 encodeList : ShoppingList -> Encode.Value
 encodeList list =
     object
-        [ ( "listId", Encode.string (listIdToString list) )
+        [ ( "listId", Encode.string (listId list) )
         , ( "title", Encode.string list.title )
         ]
 
 
-encodeItem : Item -> ShoppingList -> Encode.Value
-encodeItem item list =
+encodeItem : Item -> Encode.Value
+encodeItem item =
     object
-        [ ( "itemId", Encode.string (itemIdToString item) )
-        , ( "listId", Encode.string (listIdToString list) )
+        [ ( "itemId", Encode.string (itemId item) )
+        , ( "listId", Encode.string (listIdToString item.listId) )
         , ( "text", Encode.string item.text )
         ]
 
@@ -157,40 +213,3 @@ encodeItem item list =
 emptyObject : Encode.Value
 emptyObject =
     object []
-
-
-msgToActionType : Msg -> String
-msgToActionType msg =
-    case msg of
-        Register ->
-            "Register"
-
-        GetLists ->
-            "GetLists"
-
-        CreateNewList ->
-            "CreateNewList"
-
-        DeleteList _ ->
-            "DeleteList"
-
-        ShoppingListTitleEdited _ _ ->
-            "ShoppingListTitleEdited"
-
-        ItemAdded _ ->
-            "CreateItem"
-
-        ItemTextEdited _ _ _ ->
-            "UpdateItemText"
-
-        ItemChecked _ _ _ ->
-            "CompleteItem"
-
-        ItemDeleted _ _ ->
-            "DeleteItem"
-
-        ClearCheckedItems _ ->
-            "ClearCheckedItems"
-
-        MessageReceived _ ->
-            "MessageReceived"
