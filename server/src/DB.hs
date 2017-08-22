@@ -52,8 +52,8 @@ deleteList listId' = do
   _ <- execute (PG.Only listId') "DELETE FROM lists WHERE id = ?"
   return ()
 
-updateListTitle :: Text -> UUID -> PGTransaction (Maybe List)
-updateListTitle newTitle id' = do
+updateListTitle :: UUID -> Text -> PGTransaction (Maybe List)
+updateListTitle id' newTitle = do
   list <- query (newTitle, id') "UPDATE lists SET title = ? WHERE id = ? RETURNING id, title"
   return $ listToMaybe list
 

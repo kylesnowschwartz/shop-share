@@ -28,63 +28,32 @@ encodeActionTypeAndData action =
         ( actionType, actionData ) =
             case action of
                 Register ->
-                    ( "Register"
-                    , []
-                    )
+                    ( "Register", object [] )
 
                 GetLists ->
-                    ( "GetLists"
-                    , []
-                    )
+                    ( "GetLists", object [] )
 
                 CreateList list ->
-                    ( "CreateList"
-                    , [ ( "listId"
-                        , Encode.string (listId list)
-                        )
-                      ]
-                    )
+                    ( "CreateList", encodeList list )
 
                 DeleteList list ->
-                    ( "DeleteList"
-                    , [ ( "listId"
-                        , Encode.string (listId list)
-                        )
-                      ]
-                    )
+                    ( "DeleteList", encodeList list )
 
                 UpdateList list ->
-                    ( "UpdateList"
-                    , [ ( "list", encodeList list ) ]
-                    )
+                    ( "UpdateList", encodeList list )
 
                 CreateItem item ->
-                    ( "CreateItem"
-                    , [ ( "itemId"
-                        , Encode.string (itemId item)
-                        )
-                      , ( "listId"
-                        , Encode.string (listIdToString item.listId)
-                        )
-                      ]
-                    )
+                    ( "CreateItem", encodeItem item )
 
                 UpdateItem item ->
-                    ( "UpdateItem"
-                    , [ ( "item", encodeItem item ) ]
-                    )
+                    ( "UpdateItem", encodeItem item )
 
                 DeleteItem item ->
-                    ( "DeleteItem"
-                    , [ ( "itemId"
-                        , Encode.string (itemId item)
-                        )
-                      ]
-                    )
+                    ( "DeleteItem", encodeItem item )
     in
         object
             [ ( "type", Encode.string actionType )
-            , ( "data", object actionData )
+            , ( "data", actionData )
             ]
 
 
@@ -104,11 +73,6 @@ encodeItem item =
         , ( "text", Encode.string item.text )
         , ( "completed", Encode.bool item.completed )
         ]
-
-
-emptyObject : Encode.Value
-emptyObject =
-    object []
 
 
 
@@ -135,8 +99,8 @@ eventDecoder =
                     "CreateList" ->
                         decodeCreatedListEvent
 
-                    "UpdateListTitle" ->
-                        decodeUpdatedListTitleEvent
+                    "UpdateList" ->
+                        decodeUpdatedListEvent
 
                     "DeleteList" ->
                         decodeDeletedListEvent
@@ -144,11 +108,11 @@ eventDecoder =
                     "CreateItem" ->
                         decodeCreatedItemEvent
 
-                    "UpdateItemText" ->
-                        decodeUpdatedItemTextEvent
+                    "UpdateItem" ->
+                        decodeUpdatedItemEvent
 
                     other ->
-                        fail <| "Unknown action received from server: " ++ other
+                        fail <| "Unknown event received from server: " ++ other
             )
 
 
@@ -178,8 +142,8 @@ decodeDeletedListEvent =
     map DeletedList listsDecoder
 
 
-decodeUpdatedListTitleEvent : Decoder Event
-decodeUpdatedListTitleEvent =
+decodeUpdatedListEvent : Decoder Event
+decodeUpdatedListEvent =
     map UpdatedListTitle listsDecoder
 
 
@@ -188,8 +152,8 @@ decodeCreatedItemEvent =
     map CreatedItem listsDecoder
 
 
-decodeUpdatedItemTextEvent : Decoder Event
-decodeUpdatedItemTextEvent =
+decodeUpdatedItemEvent : Decoder Event
+decodeUpdatedItemEvent =
     map UpdatedItemText listsDecoder
 
 

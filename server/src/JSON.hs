@@ -35,7 +35,7 @@ encodeActionConfirmation action value =
               ("CreateList", updatedLists)
             (DeleteList _) ->
               ("DeleteList", updatedLists)
-            (UpdateListTitle _ _) ->
+            (UpdateList _) ->
               ("UpdateList", updatedLists)
             (CreateItem _) ->
               ("CreateItem", updatedLists)

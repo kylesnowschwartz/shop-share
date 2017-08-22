@@ -103,13 +103,13 @@ Server -> Client
 ```
 
 
-## UpdateListTitle
+## UpdateList
 
 Client -> Server
 ```js
 {
   "action": {
-    "type": "UpdateListTitle",
+    "type": "UpdateList",
     "data": {
       "listId": "55a82a71-1d8a-4abd-9aa1-29b351766c48",
       "title": "New title"
@@ -122,7 +122,7 @@ Server -> Client
 ```js
 {
   "confirmAction": {
-    "type": "UpdateListTitle",
+    "type": "UpdateList",
     "data": {
       "lists": [ ... ]
     }
@@ -194,7 +194,7 @@ Client -> Server
 ```js
 {
   "action": {
-    "type": "UpdateItemText",
+    "type": "UpdateItem",
     "data": {
       "item": {
         "itemId": "51f66427-48a4-4495-b778-f956b4f23754",
@@ -211,7 +211,7 @@ Server -> Client
 ```js
 {
   "confirmAction": {
-    "type": "UpdateItemText",
+    "type": "UpdateItem",
     "data": {
       "lists": [ ... ]
     }
