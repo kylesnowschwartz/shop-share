@@ -110,15 +110,27 @@ view model =
     section [ class "section" ]
         [ div
             [ class "container" ]
-            [ h1 [ class "title" ] [ text "Hello shop share!" ]
+            [ viewPageTitle
             , viewShoppingLists model
-            , div [ class "section" ]
-                [ a [ onClick (CreateListClicked) ] [ text "make a new list" ]
-                ]
+            , viewCreateListButton
             , viewErrors model
             , viewClientId model
             ]
         ]
+
+
+viewPageTitle : Html Msg
+viewPageTitle =
+    h1 [ class "title" ] [ text "Welcome to shop share!" ]
+
+
+viewCreateListButton : Html Msg
+viewCreateListButton =
+    button
+        [ class "button is-primary"
+        , onClick (CreateListClicked)
+        ]
+        [ text "New list" ]
 
 
 viewShoppingLists : Model -> Html Msg
@@ -178,7 +190,7 @@ viewAddListItem list =
 
 viewClearCheckedItems : ShoppingList -> Html Msg
 viewClearCheckedItems list =
-    button [ class "button is-primary", onClick (ClearCheckedItems list) ] [ text "clear checked items" ]
+    button [ class "button is-small", onClick (ClearCheckedItems list) ] [ text "clear checked items" ]
 
 
 viewErrors : Model -> Html Msg
