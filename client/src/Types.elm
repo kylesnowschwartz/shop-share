@@ -1,9 +1,10 @@
 module Types exposing (..)
 
--- TODO: Make shoppingLists & listItems Sets instead of Lists
-
 import Uuid as Uuid exposing (Uuid)
 import Random.Pcg as Pcg
+
+
+-- A Msg is sent to us by the Elm Runtime when something happens.
 
 
 type Msg

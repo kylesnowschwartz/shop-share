@@ -38,7 +38,6 @@ data List =
        } deriving (Generic, Show)
 
 instance ToJSON List
-instance FromJSON List
 
 instance FromRow List where
   fromRow = List <$> field <*> field <*> pure []
@@ -59,9 +58,9 @@ instance FromRow Item
 
 data Action = Register
             | GetLists
-            | CreateList UUID
-            | UpdateListTitle Text UUID
-            | DeleteList UUID
+            | CreateList List
+            | UpdateList List
+            | DeleteList List
             | CreateItem Item
             | UpdateItem Item
             | DeleteItem UUID
@@ -74,7 +73,12 @@ instance FromJSON Action where
     actionType <- action .: "type"
     data' <- action .: "data"
 
-    let item = Item <$>
+    let list = List <$>
+          data' .: "listId" <*>
+          data' .: "title" <*>
+          pure [] -- For now let's ignore any submitted sub-items
+
+    let item' = Item <$>
           data' .: "itemId" <*>
           data' .: "text" <*>
           data' .: "completed" <*>
@@ -83,9 +87,9 @@ instance FromJSON Action where
     case actionType of
       "Register"        -> pure Register
       "GetLists"        -> pure GetLists
-      "CreateList"      -> CreateList <$> data' .: "title"
-      "DeleteList"      -> DeleteList <$> data' .: "listId"
-      "UpdateListTitle" -> UpdateListTitle <$> data' .: "title" <*> data' .: "listId"
+      "CreateList"      -> CreateList <$> list
+      "UpdateList"      -> UpdateList <$> list
+      "DeleteList"      -> DeleteList <$> list
       "CreateItem"      -> CreateItem <$> item
       "UpdateItem"      -> UpdateItem <$> item
       "SubscribeToList" -> SubscribeToList <$> data' .: "listId"

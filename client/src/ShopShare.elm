@@ -107,37 +107,44 @@ handleMessage model message =
 
 view : Model -> Html Msg
 view model =
-    div [ class "section" ]
-        [ h1 [] [ text "Hello shop share!" ]
-        , dl [ id "container lists" ] (List.map viewShoppingList model.shoppingLists)
-        , div [ class "section" ]
-            [ a [ onClick (CreateListClicked) ] [ text "make a new list" ]
+    section [ class "section" ]
+        [ div
+            [ class "container" ]
+            [ viewPageTitle
+            , viewShoppingLists model
+            , viewCreateListButton
+            , viewErrors model
+            , viewClientId model
             ]
-        , viewErrors model
-        , viewClientId model
         ]
 
 
-viewErrors : Model -> Html Msg
-viewErrors model =
-    div [] [ text (Maybe.withDefault "" model.errorMessage) ]
+viewPageTitle : Html Msg
+viewPageTitle =
+    h1 [ class "title" ] [ text "Welcome to shop share!" ]
 
 
-viewClientId : Model -> Html Msg
-viewClientId model =
-    case model.clientId of
-        Nothing ->
-            div [] []
+viewCreateListButton : Html Msg
+viewCreateListButton =
+    button
+        [ class "button is-primary"
+        , onClick (CreateListClicked)
+        ]
+        [ text "New list" ]
 
-        Just id ->
-            h3 [] [ text ("Registered with server as client " ++ toString id) ]
+
+viewShoppingLists : Model -> Html Msg
+viewShoppingLists model =
+    div [ class "container columns is-centered is-multiline" ]
+        (List.map viewShoppingList model.shoppingLists)
 
 
 viewShoppingList : ShoppingList -> Html Msg
 viewShoppingList list =
-    dd [ class "content" ]
+    div [ class "column is-half" ]
         [ input
-            [ placeholder "List title"
+            [ class "input"
+            , placeholder "List title"
             , onInput (ListTitleEdited list)
             , value list.title
             ]
@@ -155,7 +162,14 @@ viewShoppingList list =
 viewListItem : ShoppingList -> Item -> Html Msg
 viewListItem list item =
     dd []
-        [ input [ tabindex 2, placeholder "Item name", value item.text, onInput (ItemTextEdited list item) ] []
+        [ input
+            [ class "input"
+            , tabindex 2
+            , placeholder "Item name"
+            , value item.text
+            , onInput (ItemTextEdited list item)
+            ]
+            []
         , label [ class "checkbox" ]
             [ input [ type_ "checkbox", checked item.completed, Html.Events.onCheck (ItemChecked list item) ] [] ]
         , a [ tabindex -1, class "delete is-small", onClick (DeleteItemClicked list item) ] []
@@ -166,7 +180,8 @@ viewAddListItem : ShoppingList -> Html Msg
 viewAddListItem list =
     dd []
         [ input
-            [ placeholder "Add a new list item"
+            [ class "input"
+            , placeholder "Add a new list item"
             , onClick (CreateItemClicked list)
             ]
             []
@@ -175,7 +190,22 @@ viewAddListItem list =
 
 viewClearCheckedItems : ShoppingList -> Html Msg
 viewClearCheckedItems list =
-    button [ class "button is-primary", onClick (ClearCheckedItems list) ] [ text "clear checked items" ]
+    button [ class "button is-small", onClick (ClearCheckedItems list) ] [ text "clear checked items" ]
+
+
+viewErrors : Model -> Html Msg
+viewErrors model =
+    div [] [ text (Maybe.withDefault "" model.errorMessage) ]
+
+
+viewClientId : Model -> Html Msg
+viewClientId model =
+    case model.clientId of
+        Nothing ->
+            div [] []
+
+        Just id ->
+            h3 [] [ text ("Registered with server as client " ++ toString id) ]
 
 
 subscriptions : Model -> Sub Msg
