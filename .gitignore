@@ -3,6 +3,10 @@ elm-stuff
 repl-temp-*
 elm.js
 
+# npm files:
+node_modules
+
+
 # Stack files:
 .stack-work
 

@@ -1,0 +1,13 @@
+{
+  "name": "shopshare-client",
+  "version": "0.0.1",
+  "description": "Elm Client for ShopShare",
+  "main": "elm.js",
+  "dependencies": {
+    "bulma": "^0.5.1"
+  },
+  "devDependencies": {},
+  "scripts": {},
+  "author": "Kyle Schwartz & Kieran Trezona-le Comte",
+  "license": "MIT"
+}
