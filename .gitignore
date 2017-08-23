@@ -9,6 +9,7 @@ node_modules
 # sass files:
 .sass-cache
 shopshare.css.map
+shopshare.css
 
 # Stack files:
 .stack-work
