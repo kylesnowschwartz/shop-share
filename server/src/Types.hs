@@ -78,7 +78,7 @@ instance FromJSON Action where
           data' .: "title" <*>
           pure [] -- For now let's ignore any submitted sub-items
 
-    let item' = Item <$>
+    let item = Item <$>
           data' .: "itemId" <*>
           data' .: "text" <*>
           data' .: "completed" <*>
