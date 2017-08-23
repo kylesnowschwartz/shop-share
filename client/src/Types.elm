@@ -16,6 +16,8 @@ type Msg
     | ItemChecked ShoppingList Item Bool
     | DeleteItemClicked ShoppingList Item
     | ClearCheckedItems ShoppingList
+    | DeleteListCancelClicked
+    | DeleteListConfirmClicked
     | WSMessageReceived String
 
 
@@ -53,6 +55,7 @@ type alias Model =
     , clientId : Maybe ClientId
     , errorMessage : Maybe String
     , uuidSeed : Pcg.Seed
+    , listToDelete : Maybe ShoppingList
     }
 
 

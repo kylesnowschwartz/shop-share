@@ -23,8 +23,18 @@ init randomNumber =
     , clientId = Nothing
     , errorMessage = Nothing
     , uuidSeed = uuidSeedFromInt randomNumber
+    , listToDelete = Nothing
     }
         ! [ publishAction Register ]
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    WS.listen wsAddress WSMessageReceived
 
 
 
@@ -42,7 +52,23 @@ update msg model =
                 newModel ! [ publishAction (CreateList newList) ]
 
         DeleteListClicked list ->
-            (deleteList model list) ! [ publishAction (DeleteList list) ]
+            { model | listToDelete = Just list } ! []
+
+        DeleteListConfirmClicked ->
+            case model.listToDelete of
+                Nothing ->
+                    model ! []
+
+                Just list ->
+                    let
+                        updatedModel =
+                            deleteList model list
+                    in
+                        { updatedModel | listToDelete = Nothing }
+                            ! [ publishAction (DeleteList list) ]
+
+        DeleteListCancelClicked ->
+            { model | listToDelete = Nothing } ! []
 
         CreateItemClicked list ->
             let
@@ -108,7 +134,8 @@ handleMessage model message =
 view : Model -> Html Msg
 view model =
     section [ class "section" ]
-        [ div
+        [ deleteListModal model
+        , div
             [ class "container" ]
             [ viewPageTitle
             , viewShoppingLists model
@@ -126,11 +153,13 @@ viewPageTitle =
 
 viewCreateListButton : Html Msg
 viewCreateListButton =
-    button
-        [ class "button is-primary"
-        , onClick (CreateListClicked)
+    div [ class "is-horizontally-centered" ]
+        [ button
+            [ class "button is-primary"
+            , onClick (CreateListClicked)
+            ]
+            [ text "New list" ]
         ]
-        [ text "New list" ]
 
 
 viewShoppingLists : Model -> Html Msg
@@ -142,37 +171,65 @@ viewShoppingLists model =
 viewShoppingList : ShoppingList -> Html Msg
 viewShoppingList list =
     div [ class "column is-half" ]
+        [ viewListTitleAndDeleteButton list
+        , viewListItems list
+        , viewClearCheckedItemsButton list
+        ]
+
+
+viewListTitleAndDeleteButton : ShoppingList -> Html Msg
+viewListTitleAndDeleteButton list =
+    div [ class "columns is-vertically-centered" ]
         [ input
-            [ class "input"
+            [ class "column is-11 input"
             , placeholder "List title"
             , onInput (ListTitleEdited list)
             , value list.title
             ]
             []
-        , a [ tabindex -1, class "delete is-small", onClick (DeleteListClicked list) ] []
-        , div []
-            [ dl [ class "list" ]
-                (List.concat [ List.map (viewListItem list) list.listItems, [ viewAddListItem list ] ])
+        , button
+            [ tabindex -1
+            , class "column is-1 button delete is-large is-danger is-pulled-right"
+            , onClick (DeleteListClicked list)
             ]
-        , div []
-            [ viewClearCheckedItems list ]
+            []
+        ]
+
+
+viewListItems : ShoppingList -> Html Msg
+viewListItems list =
+    div []
+        [ div [ class "list" ]
+            (List.map (viewListItem list) list.listItems ++ [ viewAddListItem list ])
         ]
 
 
 viewListItem : ShoppingList -> Item -> Html Msg
 viewListItem list item =
-    dd []
+    -- FIXME: Vertical centering not working for small screens:
+    div [ class "columns is-vertically-centered" ]
         [ input
-            [ class "input"
+            [ class "column is-10 input is-borderless"
             , tabindex 2
             , placeholder "Item name"
             , value item.text
             , onInput (ItemTextEdited list item)
             ]
             []
-        , label [ class "checkbox" ]
-            [ input [ type_ "checkbox", checked item.completed, Html.Events.onCheck (ItemChecked list item) ] [] ]
-        , a [ tabindex -1, class "delete is-small", onClick (DeleteItemClicked list item) ] []
+        , label [ class "column is-1 checkbox" ]
+            [ input
+                [ type_ "checkbox"
+                , checked item.completed
+                , Html.Events.onCheck (ItemChecked list item)
+                ]
+                []
+            ]
+        , button
+            [ tabindex -1
+            , class "column is-1 button delete is-large"
+            , onClick (DeleteItemClicked list item)
+            ]
+            []
         ]
 
 
@@ -180,17 +237,50 @@ viewAddListItem : ShoppingList -> Html Msg
 viewAddListItem list =
     dd []
         [ input
-            [ class "input"
-            , placeholder "Add a new list item"
+            [ class "input has-shadow-only"
+            , placeholder "Add item"
             , onClick (CreateItemClicked list)
             ]
             []
         ]
 
 
-viewClearCheckedItems : ShoppingList -> Html Msg
-viewClearCheckedItems list =
-    button [ class "button is-small", onClick (ClearCheckedItems list) ] [ text "clear checked items" ]
+viewClearCheckedItemsButton : ShoppingList -> Html Msg
+viewClearCheckedItemsButton list =
+    button
+        [ class "button is-light is-pulled-right"
+        , onClick (ClearCheckedItems list)
+        ]
+        [ text "clear checked items" ]
+
+
+deleteListModal : Model -> Html Msg
+deleteListModal model =
+    let
+        modalClass =
+            case model.listToDelete of
+                Nothing ->
+                    "modal"
+
+                Just list ->
+                    "modal is-active"
+    in
+        div [ class modalClass ]
+            [ div [ class "modal-background" ] []
+            , div
+                [ class "modal-content is-horizontally-centered" ]
+                [ button
+                    [ class "button is-danger"
+                    , onClick DeleteListConfirmClicked
+                    ]
+                    [ text "Permanently delete this shopping list" ]
+                ]
+            , button
+                [ class "modal-close is-large"
+                , onClick DeleteListCancelClicked
+                ]
+                []
+            ]
 
 
 viewErrors : Model -> Html Msg
@@ -206,8 +296,3 @@ viewClientId model =
 
         Just id ->
             h3 [] [ text ("Registered with server as client " ++ toString id) ]
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    WS.listen wsAddress WSMessageReceived

@@ -6,6 +6,9 @@ elm.js
 # npm files:
 node_modules
 
+# sass files:
+.sass-cache
+shopshare.css.map
 
 # Stack files:
 .stack-work
