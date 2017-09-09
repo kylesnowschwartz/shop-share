@@ -138,8 +138,8 @@ view model =
         , div
             [ class "container" ]
             [ viewPageTitle
-            , viewShoppingLists model
             , viewCreateListButton
+            , viewShoppingLists model
             , viewErrors model
             , viewClientId model
             ]
@@ -148,12 +148,12 @@ view model =
 
 viewPageTitle : Html Msg
 viewPageTitle =
-    h1 [ class "title" ] [ text "Welcome to shop share!" ]
+    div [ class "section" ] [ h1 [ class "title" ] [ text "Welcome to shop share!" ] ]
 
 
 viewCreateListButton : Html Msg
 viewCreateListButton =
-    div [ class "is-horizontally-centered" ]
+    div [ class "section is-horizontally-centered" ]
         [ button
             [ class "button is-primary"
             , onClick (CreateListClicked)
@@ -164,7 +164,7 @@ viewCreateListButton =
 
 viewShoppingLists : Model -> Html Msg
 viewShoppingLists model =
-    div [ class "container columns is-centered is-multiline" ]
+    div [ class "section columns is-centered is-multiline" ]
         (List.map viewShoppingList model.shoppingLists)
 
 
