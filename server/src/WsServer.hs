@@ -91,6 +91,10 @@ performAction action =
       _ <- runDB $ updateItem item
       confirmActionAndReturnAllLists
 
+    DeleteItem item -> do
+      runDB $ deleteItem $ itemId item
+      confirmActionAndReturnAllLists
+
     Register ->
       return $ encodeError $ Text.pack "You're already registered on this connection!"
 

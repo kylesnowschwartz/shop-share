@@ -32,6 +32,7 @@ library
                      , servant >= 0.11
                      , servant-server >= 0.11
                      , text
+                     , time
                      , uuid
                      , uuid-types
                      , wai

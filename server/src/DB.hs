@@ -43,7 +43,7 @@ selectItemsForList list = do
 
 insertList :: UUID -> PGTransaction (Maybe List)
 insertList listId = do
-  list <- query (PG.Only listId) "INSERT INTO lists VALUES (?, DEFAULT) RETURNING id, title"
+  list <- query (PG.Only listId) "INSERT INTO lists VALUES (?, DEFAULT) RETURNING id, title, created_at, updated_at"
   return $ listToMaybe list
 
 deleteList :: UUID -> PGTransaction ()
@@ -54,17 +54,22 @@ deleteList listId' = do
 
 updateListTitle :: UUID -> Text -> PGTransaction (Maybe List)
 updateListTitle id' newTitle = do
-  list <- query (newTitle, id') "UPDATE lists SET title = ? WHERE id = ? RETURNING id, title"
+  list <- query (newTitle, id') "UPDATE lists SET title = ? WHERE id = ? RETURNING id, title, created_at, updated_at"
   return $ listToMaybe list
 
 insertItem :: Item -> PGTransaction (Maybe Item)
 insertItem Item{..} = do
-  let queryStr = "INSERT INTO items VALUES (?, ?, ?, ?) RETURNING id, text, completed, list_id"
+  let queryStr = "INSERT INTO items VALUES (?, ?, ?, ?) RETURNING id, text, completed, list_id, created_at, updated_at"
   item <- query (itemId, text, completed, listsId) queryStr
   return $ listToMaybe item
 
 updateItem :: Item -> PGTransaction (Maybe Item)
 updateItem Item{..} = do
-  let queryStr = "UPDATE items SET text = ?, completed = ?, list_id = ? WHERE id = ? RETURNING id, text, completed, list_id"
+  let queryStr = "UPDATE items SET text = ?, completed = ?, list_id = ? WHERE id = ? RETURNING id, text, completed, list_id, created_at, updated_at"
   item <- query (text, completed, listsId, itemId) queryStr
   return $ listToMaybe item
+
+deleteItem :: UUID -> PGTransaction ()
+deleteItem itemId' = do
+  _ <- execute (PG.Only itemId') "DELETE FROM items WHERE id = ?"
+  return ()

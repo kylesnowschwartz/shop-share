@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings     #-}
 
 module Types where
 
@@ -7,6 +8,7 @@ import           Data.Aeson                         (FromJSON, ToJSON, (.:))
 import qualified Data.Aeson                         as JSON
 import           Data.Set                           as Set
 import           Data.Text                          (Text)
+import           Data.Time
 import           Data.UUID                          (UUID)
 import           Database.PostgreSQL.Simple         (FromRow)
 import           Database.PostgreSQL.Simple.FromRow
@@ -32,21 +34,30 @@ instance Ord Client where
 -- LISTS & ITEMS
 
 data List =
-  List { listId :: UUID
-       , title  :: Text
-       , items  :: [Item]
+  List { listId    :: UUID
+       , title     :: Text
+       , createdAt :: Maybe UTCTime
+       , updatedAt :: Maybe UTCTime
+       , items     :: [Item]
        } deriving (Generic, Show)
 
 instance ToJSON List
 
 instance FromRow List where
-  fromRow = List <$> field <*> field <*> pure []
+  fromRow = List <$>
+    field <*> -- list_id
+    field <*> -- title
+    field <*> -- created_at
+    field <*> -- updated_at
+    pure []
 
 data Item =
   Item { itemId    :: UUID
        , text      :: Text
        , completed :: Bool
        , listsId   :: UUID
+       , createdAt :: Maybe UTCTime
+       , updatedAt :: Maybe UTCTime
        } deriving (Generic, Show)
 
 instance ToJSON Item
@@ -63,7 +74,7 @@ data Action = Register
             | DeleteList List
             | CreateItem Item
             | UpdateItem Item
-            | DeleteItem UUID
+            | DeleteItem Item
             | SubscribeToList Text
             deriving (Generic, Show)
 
@@ -76,13 +87,17 @@ instance FromJSON Action where
     let list = List <$>
           data' .: "listId" <*>
           data' .: "title" <*>
+          pure Nothing <*>
+          pure Nothing <*>
           pure [] -- For now let's ignore any submitted sub-items
 
     let item = Item <$>
           data' .: "itemId" <*>
           data' .: "text" <*>
           data' .: "completed" <*>
-          data' .: "listId"
+          data' .: "listId" <*>
+          pure Nothing <*>
+          pure Nothing
 
     case actionType of
       "Register"        -> pure Register
@@ -92,5 +107,6 @@ instance FromJSON Action where
       "DeleteList"      -> DeleteList <$> list
       "CreateItem"      -> CreateItem <$> item
       "UpdateItem"      -> UpdateItem <$> item
+      "DeleteItem"      -> DeleteItem <$> item
       "SubscribeToList" -> SubscribeToList <$> data' .: "listId"
       _                 -> fail ("unknown action type: " ++ actionType)
