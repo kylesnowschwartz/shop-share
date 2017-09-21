@@ -2,6 +2,7 @@ module Types exposing (..)
 
 import Uuid as Uuid exposing (Uuid)
 import Random.Pcg as Pcg
+import Date exposing (Date)
 
 
 -- A Msg is sent to us by the Elm Runtime when something happens.
@@ -48,6 +49,7 @@ type Event
     | UpdatedListTitle (List ShoppingList)
     | CreatedItem (List ShoppingList)
     | UpdatedItemText (List ShoppingList)
+    | DeletedItem (List ShoppingList)
 
 
 type alias Model =
@@ -63,6 +65,8 @@ type alias ShoppingList =
     { id : ListId
     , title : String
     , listItems : List Item
+    , createdAt : Maybe Date
+    , updatedAt : Maybe Date
     }
 
 
@@ -71,6 +75,8 @@ type alias Item =
     , text : String
     , completed : Bool
     , listId : ListId
+    , createdAt : Maybe Date
+    , updatedAt : Maybe Date
     }
 
 

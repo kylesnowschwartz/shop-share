@@ -2,7 +2,7 @@ module Event exposing (..)
 
 import Action exposing (..)
 import Types exposing (..)
-import UuidHelpers exposing (listId, itemId)
+import UpdateHelpers exposing (earliestFirst)
 
 
 handleEvent : Model -> Event -> ( Model, Cmd Msg )
@@ -37,15 +37,18 @@ handleEvent model event =
             UpdatedItemText lists ->
                 sortModel lists
 
+            DeletedItem lists ->
+                sortModel lists
+
 
 orderListsAndTheirItems : Model -> List ShoppingList -> Model
 orderListsAndTheirItems model lists =
     { model
         | shoppingLists =
-            ((List.sortBy listId) << (List.map sortItemsById)) lists
+            (earliestFirst << (List.map sortItems)) lists
     }
 
 
-sortItemsById : ShoppingList -> ShoppingList
-sortItemsById list =
-    { list | listItems = List.sortBy itemId list.listItems }
+sortItems : ShoppingList -> ShoppingList
+sortItems list =
+    { list | listItems = earliestFirst list.listItems }

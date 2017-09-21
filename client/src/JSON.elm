@@ -2,6 +2,7 @@ module JSON exposing (..)
 
 import Json.Decode as Decode exposing (..)
 import Json.Decode.Pipeline exposing (..)
+import Json.Decode.Extra exposing (..)
 import Json.Encode as Encode exposing (..)
 import Types exposing (..)
 import Uuid exposing (Uuid)
@@ -168,6 +169,8 @@ decodeShoppingList =
         |> required "listId" (map ListId uuid)
         |> required "title" Decode.string
         |> required "items" (Decode.list decodeItem)
+        |> required "createdAt" (nullable date)
+        |> required "updatedAt" (nullable date)
 
 
 decodeItem : Decoder Item
@@ -177,6 +180,8 @@ decodeItem =
         |> required "text" Decode.string
         |> required "completed" Decode.bool
         |> required "listsId" (map ListId uuid)
+        |> required "createdAt" (nullable date)
+        |> required "updatedAt" (nullable date)
 
 
 uuid : Decoder Uuid

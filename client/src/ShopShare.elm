@@ -49,7 +49,7 @@ update msg model =
                 ( newModel, newList ) =
                     createListWithNewUuid model
             in
-                newModel ! [ publishAction (CreateList newList) ]
+                newModel ! [ publishAction <| CreateList newList ]
 
         DeleteListClicked list ->
             { model | listToDelete = Just list } ! []
@@ -65,7 +65,7 @@ update msg model =
                             deleteList model list
                     in
                         { updatedModel | listToDelete = Nothing }
-                            ! [ publishAction (DeleteList list) ]
+                            ! [ publishAction <| DeleteList list ]
 
         DeleteListCancelClicked ->
             { model | listToDelete = Nothing } ! []
@@ -75,14 +75,14 @@ update msg model =
                 ( newModel, newItem ) =
                     createItemWithNewUuid model list
             in
-                newModel ! [ publishAction (CreateItem newItem) ]
+                newModel ! [ publishAction <| CreateItem newItem ]
 
         ListTitleEdited list newTitle ->
             let
                 ( newModel, updatedList ) =
                     editListTitle model list newTitle
             in
-                newModel ! [ publishAction (UpdateList updatedList) ]
+                newModel ! [ publishAction <| UpdateList updatedList ]
 
         ItemTextEdited list item newItemText ->
             let
@@ -90,7 +90,7 @@ update msg model =
                     { item | text = newItemText }
             in
                 replaceList (updateItem updatedItem list) model
-                    ! [ publishAction (UpdateItem updatedItem) ]
+                    ! [ publishAction <| UpdateItem updatedItem ]
 
         ItemChecked list item itemChecked ->
             let
@@ -98,11 +98,11 @@ update msg model =
                     { item | completed = itemChecked }
             in
                 replaceList (updateItem updatedItem list) model
-                    ! [ publishAction (UpdateItem updatedItem) ]
+                    ! [ publishAction <| UpdateItem updatedItem ]
 
         DeleteItemClicked list deletedItem ->
             replaceList (deleteItem deletedItem list) model
-                ! [ publishAction (DeleteItem deletedItem) ]
+                ! [ publishAction <| DeleteItem deletedItem ]
 
         ClearCheckedItems list ->
             let
@@ -156,7 +156,7 @@ viewCreateListButton =
     div [ class "section is-horizontally-centered" ]
         [ button
             [ class "button is-primary"
-            , onClick (CreateListClicked)
+            , onClick CreateListClicked
             ]
             [ text "New list" ]
         ]
@@ -164,8 +164,9 @@ viewCreateListButton =
 
 viewShoppingLists : Model -> Html Msg
 viewShoppingLists model =
-    div [ class "section columns is-centered is-multiline" ]
-        (List.map viewShoppingList model.shoppingLists)
+    div [ class "section columns is-centered is-multiline" ] <|
+        List.map viewShoppingList <|
+            model.shoppingLists
 
 
 viewShoppingList : ShoppingList -> Html Msg
@@ -183,14 +184,14 @@ viewListTitleAndDeleteButton list =
         [ input
             [ class "column is-11 input"
             , placeholder "List title"
-            , onInput (ListTitleEdited list)
+            , onInput <| ListTitleEdited list
             , value list.title
             ]
             []
         , button
             [ tabindex -1
             , class "column is-1 button delete is-large is-danger is-pulled-right"
-            , onClick (DeleteListClicked list)
+            , onClick <| DeleteListClicked list
             ]
             []
         ]
@@ -199,8 +200,9 @@ viewListTitleAndDeleteButton list =
 viewListItems : ShoppingList -> Html Msg
 viewListItems list =
     div []
-        [ div [ class "list" ]
-            (List.map (viewListItem list) list.listItems ++ [ viewAddListItem list ])
+        [ div [ class "list" ] <|
+            List.map (viewListItem list) list.listItems
+                ++ [ viewAddListItem list ]
         ]
 
 
@@ -213,21 +215,21 @@ viewListItem list item =
             , tabindex 2
             , placeholder "Item name"
             , value item.text
-            , onInput (ItemTextEdited list item)
+            , onInput <| ItemTextEdited list item
             ]
             []
         , label [ class "column is-1 checkbox" ]
             [ input
                 [ type_ "checkbox"
                 , checked item.completed
-                , Html.Events.onCheck (ItemChecked list item)
+                , Html.Events.onCheck <| ItemChecked list item
                 ]
                 []
             ]
         , button
             [ tabindex -1
             , class "column is-1 button delete is-large"
-            , onClick (DeleteItemClicked list item)
+            , onClick <| DeleteItemClicked list item
             ]
             []
         ]
@@ -239,7 +241,7 @@ viewAddListItem list =
         [ input
             [ class "input has-shadow-only"
             , placeholder "Add item"
-            , onClick (CreateItemClicked list)
+            , onClick <| CreateItemClicked list
             ]
             []
         ]
@@ -249,7 +251,7 @@ viewClearCheckedItemsButton : ShoppingList -> Html Msg
 viewClearCheckedItemsButton list =
     button
         [ class "button is-light is-pulled-right"
-        , onClick (ClearCheckedItems list)
+        , onClick <| ClearCheckedItems list
         ]
         [ text "clear checked items" ]
 
@@ -285,7 +287,7 @@ deleteListModal model =
 
 viewErrors : Model -> Html Msg
 viewErrors model =
-    div [] [ text (Maybe.withDefault "" model.errorMessage) ]
+    div [] [ text <| Maybe.withDefault "" model.errorMessage ]
 
 
 viewClientId : Model -> Html Msg
@@ -295,4 +297,4 @@ viewClientId model =
             div [] []
 
         Just id ->
-            h3 [] [ text ("Registered with server as client " ++ toString id) ]
+            h3 [] [ text <| "Registered with server as client " ++ toString id ]

@@ -1,5 +1,6 @@
 module UpdateHelpers exposing (..)
 
+import Date
 import Types exposing (..)
 import List.Extra exposing (..)
 import UuidHelpers exposing (..)
@@ -18,6 +19,20 @@ replaceIfUpdated updated a =
         updated
     else
         a
+
+
+earliestFirst : List { a | createdAt : Maybe b } -> List { a | createdAt : Maybe b }
+earliestFirst a =
+    let
+        earliestFirstDefaultingToLast a =
+            case a.createdAt of
+                Nothing ->
+                    toString (Date.fromTime 2147483647.0)
+
+                Just date ->
+                    toString date
+    in
+        (List.sortBy earliestFirstDefaultingToLast a)
 
 
 editListTitle : Model -> ShoppingList -> String -> ( Model, ShoppingList )
@@ -56,7 +71,12 @@ createListWithNewUuid model =
             stepUuid model
 
         newList =
-            { id = ListId newUuid, title = "", listItems = [] }
+            { id = ListId newUuid
+            , title = ""
+            , listItems = []
+            , createdAt = Nothing
+            , updatedAt = Nothing
+            }
     in
         ( { newModel | shoppingLists = model.shoppingLists ++ [ newList ] }, newList )
 
@@ -68,7 +88,13 @@ createItemWithNewUuid model list =
             stepUuid model
 
         newItem =
-            { id = ItemId newUuid, listId = list.id, text = "", completed = False }
+            { id = ItemId newUuid
+            , listId = list.id
+            , text = ""
+            , completed = False
+            , createdAt = Nothing
+            , updatedAt = Nothing
+            }
 
         updatedList =
             { list | listItems = list.listItems ++ [ newItem ] }
