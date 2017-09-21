@@ -1,6 +1,7 @@
 module UpdateHelpers exposing (..)
 
-import Date
+-- import Date
+
 import Types exposing (..)
 import List.Extra exposing (..)
 import UuidHelpers exposing (..)
@@ -8,15 +9,14 @@ import UuidHelpers exposing (..)
 
 replaceLists : List ShoppingList -> Model -> Model
 replaceLists newLists model =
-    { model | shoppingLists = sortListsAndItems newLists }
+    { model | shoppingLists = newLists }
 
 
 addList : ShoppingList -> Model -> Model
 addList newList model =
     { model
         | shoppingLists =
-            sortListsAndItems <|
-                List.map (replaceIfUpdated newList) model.shoppingLists
+            List.map (replaceIfUpdated newList) model.shoppingLists
     }
 
 
@@ -24,8 +24,7 @@ replaceList : ShoppingList -> Model -> Model
 replaceList updatedList model =
     { model
         | shoppingLists =
-            sortListsAndItems <|
-                List.map (replaceIfUpdated updatedList) model.shoppingLists
+            List.map (replaceIfUpdated updatedList) model.shoppingLists
     }
 
 
@@ -33,7 +32,7 @@ addItem : Item -> Model -> Model
 addItem newItem model =
     let
         newLists =
-            sortListsAndItems <| List.map updateList model.shoppingLists
+            List.map updateList model.shoppingLists
 
         updateList list =
             { list | listItems = List.map (replaceIfUpdated newItem) list.listItems }
@@ -45,22 +44,12 @@ replaceItem : Item -> Model -> Model
 replaceItem updatedItem model =
     let
         newLists =
-            sortListsAndItems <| List.map updateList model.shoppingLists
+            List.map updateList model.shoppingLists
 
         updateList list =
             { list | listItems = List.map (replaceIfUpdated updatedItem) list.listItems }
     in
         { model | shoppingLists = newLists }
-
-
-sortListsAndItems : List ShoppingList -> List ShoppingList
-sortListsAndItems lists =
-    lists |> earliestFirst << List.map sortItems
-
-
-sortItems : ShoppingList -> ShoppingList
-sortItems list =
-    { list | listItems = earliestFirst list.listItems }
 
 
 replaceIfUpdated : { a | id : b } -> { a | id : b } -> { a | id : b }
@@ -69,20 +58,6 @@ replaceIfUpdated updated a =
         updated
     else
         a
-
-
-earliestFirst : List { a | createdAt : Maybe b } -> List { a | createdAt : Maybe b }
-earliestFirst a =
-    let
-        earliestFirstDefaultingToLast a =
-            case a.createdAt of
-                Nothing ->
-                    toString (Date.fromTime 2147483647.0)
-
-                Just date ->
-                    toString date
-    in
-        (List.sortBy earliestFirstDefaultingToLast a)
 
 
 editListTitle : Model -> ShoppingList -> String -> ( Model, ShoppingList )

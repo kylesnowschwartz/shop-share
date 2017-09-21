@@ -19,7 +19,6 @@ type Msg
     | ClearCheckedItems ShoppingList
     | DeleteListCancelClicked
     | DeleteListConfirmClicked
-    | FocusItemInput Item
     | WSMessageReceived String
 
 

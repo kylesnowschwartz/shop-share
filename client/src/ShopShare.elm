@@ -7,9 +7,8 @@ import List.Extra exposing (..)
 import WebSocket as WS
 import Action exposing (publishAction)
 import Config exposing (wsAddress)
-import Event exposing (handleEvent)
+import Event exposing (..)
 import JSON
-import Ports exposing (focusItemInputPort)
 import Types exposing (..)
 import UpdateHelpers exposing (..)
 import UuidHelpers exposing (..)
@@ -76,10 +75,7 @@ update msg model =
                 ( newModel, newItem ) =
                     createItemWithNewUuid model list
             in
-                newModel
-                    ! [ focusItemInput newItem
-                      , publishAction <| CreateItem newItem
-                      ]
+                newModel ! [ publishAction <| CreateItem newItem ]
 
         ListTitleEdited list newTitle ->
             let
@@ -117,16 +113,8 @@ update msg model =
             in
                 replaceList updatedList model ! []
 
-        FocusItemInput item ->
-            model ! [ focusItemInput item ]
-
         WSMessageReceived message ->
             handleMessage model message
-
-
-focusItemInput : Item -> Cmd Msg
-focusItemInput item =
-    focusItemInputPort <| itemId item
 
 
 handleMessage : Model -> String -> ( Model, Cmd Msg )

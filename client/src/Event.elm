@@ -3,6 +3,8 @@ module Event exposing (..)
 import Action exposing (..)
 import Types exposing (..)
 import UpdateHelpers exposing (..)
+import Ports exposing (focusItemInputPort)
+import UuidHelpers exposing (..)
 
 
 handleEvent : Model -> Event -> ( Model, Cmd Msg )
@@ -28,10 +30,15 @@ handleEvent model event =
                 model ! []
 
             CreatedItem item ->
-                addItem item model ! []
+                addItem item model ! [ focusItemInput item ]
 
             UpdatedItemText item ->
                 replaceItem item model ! []
 
             DeletedItem ->
                 model ! []
+
+
+focusItemInput : Item -> Cmd Msg
+focusItemInput item =
+    focusItemInputPort <| itemId item
