@@ -85,10 +85,12 @@ ALTER SEQUENCE clients_id_seq OWNED BY clients.id;
 --
 
 CREATE TABLE items (
-    text text,
+    id uuid DEFAULT uuid_generate_v4() NOT NULL,
+    text text DEFAULT ''::text NOT NULL,
     completed boolean DEFAULT false NOT NULL,
-    list_id integer NOT NULL,
-    id uuid DEFAULT uuid_generate_v4() NOT NULL
+    list_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -99,8 +101,10 @@ ALTER TABLE items OWNER TO shopshare;
 --
 
 CREATE TABLE lists (
-    title character varying(100),
-    id uuid DEFAULT uuid_generate_v4() NOT NULL
+    id uuid DEFAULT uuid_generate_v4() NOT NULL,
+    title text DEFAULT ''::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -133,7 +137,11 @@ SELECT pg_catalog.setval('clients_id_seq', 1, false);
 -- Data for Name: items; Type: TABLE DATA; Schema: public; Owner: shopshare
 --
 
-COPY items (text, completed, list_id, id) FROM stdin;
+COPY items (id, text, completed, list_id, created_at, updated_at) FROM stdin;
+f1bd4a84-d3e6-44a1-a064-17efbd02078d	adfasdf	f	becfac80-8dc9-4697-bf90-a95ff7a61326	2017-09-21 18:24:46.879647+12	2017-09-21 18:24:46.879647+12
+5f1fe9aa-ac22-4cc2-956f-cd7b327eecef		f	9050b09c-fee9-42aa-aef6-9248924f1f32	2017-09-21 23:55:42.116461+12	2017-09-21 23:55:42.116461+12
+d77bd66c-9ea2-4df3-8198-ce812a45c664	fffff	t	9050b09c-fee9-42aa-aef6-9248924f1f32	2017-09-21 23:55:26.537438+12	2017-09-21 23:55:26.537438+12
+6e7d48f0-b260-4aac-a815-ad203eed7da4		t	9050b09c-fee9-42aa-aef6-9248924f1f32	2017-09-21 23:55:42.587095+12	2017-09-21 23:55:42.587095+12
 \.
 
 
@@ -141,7 +149,9 @@ COPY items (text, completed, list_id, id) FROM stdin;
 -- Data for Name: lists; Type: TABLE DATA; Schema: public; Owner: shopshare
 --
 
-COPY lists (title, id) FROM stdin;
+COPY lists (id, title, created_at, updated_at) FROM stdin;
+becfac80-8dc9-4697-bf90-a95ff7a61326		2017-09-21 18:22:46.307189+12	2017-09-21 18:22:46.307189+12
+9050b09c-fee9-42aa-aef6-9248924f1f32		2017-09-21 23:55:23.689109+12	2017-09-21 23:55:23.689109+12
 \.
 
 
@@ -167,6 +177,14 @@ ALTER TABLE ONLY items
 
 ALTER TABLE ONLY lists
     ADD CONSTRAINT lists_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: items items_list_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: shopshare
+--
+
+ALTER TABLE ONLY items
+    ADD CONSTRAINT items_list_id_fkey FOREIGN KEY (list_id) REFERENCES lists(id);
 
 
 --
