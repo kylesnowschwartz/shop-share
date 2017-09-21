@@ -17,7 +17,18 @@
     <div id="app"></div>
 
     <script>
-     Elm.Main.fullscreen(Math.floor(Math.random()*0x0FFFFFFF));
+     var app = Elm.Main.fullscreen(Math.floor(Math.random()*0x0FFFFFFF));
+
+     app.ports.focusItemInputPort.subscribe(function(itemInputId) {
+       var itemInput = document.getElementById(itemInputId);
+
+       if (itemInput == null) {
+         console.log("Couldn't find item input with id " + itemInputId)
+       } else {
+         itemInput.focus();
+         itemInput.select();
+       }
+     });
     </script>
   </body>
 </html>

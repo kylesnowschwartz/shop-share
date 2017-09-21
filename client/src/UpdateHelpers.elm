@@ -6,11 +6,61 @@ import List.Extra exposing (..)
 import UuidHelpers exposing (..)
 
 
+replaceLists : List ShoppingList -> Model -> Model
+replaceLists newLists model =
+    { model | shoppingLists = sortListsAndItems newLists }
+
+
+addList : ShoppingList -> Model -> Model
+addList newList model =
+    { model
+        | shoppingLists =
+            sortListsAndItems <|
+                List.map (replaceIfUpdated newList) model.shoppingLists
+    }
+
+
 replaceList : ShoppingList -> Model -> Model
 replaceList updatedList model =
     { model
-        | shoppingLists = List.map (replaceIfUpdated updatedList) model.shoppingLists
+        | shoppingLists =
+            sortListsAndItems <|
+                List.map (replaceIfUpdated updatedList) model.shoppingLists
     }
+
+
+addItem : Item -> Model -> Model
+addItem newItem model =
+    let
+        newLists =
+            sortListsAndItems <| List.map updateList model.shoppingLists
+
+        updateList list =
+            { list | listItems = List.map (replaceIfUpdated newItem) list.listItems }
+    in
+        { model | shoppingLists = newLists }
+
+
+replaceItem : Item -> Model -> Model
+replaceItem updatedItem model =
+    let
+        newLists =
+            sortListsAndItems <| List.map updateList model.shoppingLists
+
+        updateList list =
+            { list | listItems = List.map (replaceIfUpdated updatedItem) list.listItems }
+    in
+        { model | shoppingLists = newLists }
+
+
+sortListsAndItems : List ShoppingList -> List ShoppingList
+sortListsAndItems lists =
+    lists |> earliestFirst << List.map sortItems
+
+
+sortItems : ShoppingList -> ShoppingList
+sortItems list =
+    { list | listItems = earliestFirst list.listItems }
 
 
 replaceIfUpdated : { a | id : b } -> { a | id : b } -> { a | id : b }

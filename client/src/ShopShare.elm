@@ -9,6 +9,7 @@ import Action exposing (publishAction)
 import Config exposing (wsAddress)
 import Event exposing (handleEvent)
 import JSON
+import Ports exposing (focusItemInputPort)
 import Types exposing (..)
 import UpdateHelpers exposing (..)
 import UuidHelpers exposing (..)
@@ -75,7 +76,10 @@ update msg model =
                 ( newModel, newItem ) =
                     createItemWithNewUuid model list
             in
-                newModel ! [ publishAction <| CreateItem newItem ]
+                newModel
+                    ! [ focusItemInput newItem
+                      , publishAction <| CreateItem newItem
+                      ]
 
         ListTitleEdited list newTitle ->
             let
@@ -113,8 +117,16 @@ update msg model =
             in
                 replaceList updatedList model ! []
 
+        FocusItemInput item ->
+            model ! [ focusItemInput item ]
+
         WSMessageReceived message ->
             handleMessage model message
+
+
+focusItemInput : Item -> Cmd Msg
+focusItemInput item =
+    focusItemInputPort <| itemId item
 
 
 handleMessage : Model -> String -> ( Model, Cmd Msg )
@@ -189,8 +201,7 @@ viewListTitleAndDeleteButton list =
             ]
             []
         , button
-            [ tabindex -1
-            , class "column is-1 button delete is-large is-danger is-pulled-right"
+            [ class "column is-1 button delete is-large is-danger is-pulled-right"
             , onClick <| DeleteListClicked list
             ]
             []
@@ -211,8 +222,8 @@ viewListItem list item =
     -- FIXME: Vertical centering not working for small screens:
     div [ class "columns is-vertically-centered" ]
         [ input
-            [ class "column is-10 input is-borderless"
-            , tabindex 2
+            [ Html.Attributes.id <| itemId item
+            , class "column is-10 input is-borderless"
             , placeholder "Item name"
             , value item.text
             , onInput <| ItemTextEdited list item
@@ -227,8 +238,7 @@ viewListItem list item =
                 []
             ]
         , button
-            [ tabindex -1
-            , class "column is-1 button delete is-large"
+            [ class "column is-1 button delete is-large"
             , onClick <| DeleteItemClicked list item
             ]
             []
@@ -242,6 +252,7 @@ viewAddListItem list =
             [ class "input has-shadow-only"
             , placeholder "Add item"
             , onClick <| CreateItemClicked list
+            , onFocus <| CreateItemClicked list
             ]
             []
         ]

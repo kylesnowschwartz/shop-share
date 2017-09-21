@@ -2,53 +2,36 @@ module Event exposing (..)
 
 import Action exposing (..)
 import Types exposing (..)
-import UpdateHelpers exposing (earliestFirst)
+import UpdateHelpers exposing (..)
 
 
 handleEvent : Model -> Event -> ( Model, Cmd Msg )
 handleEvent model event =
     let
-        sortModel lists =
-            orderListsAndTheirItems model lists ! []
-
         fetchInitialLists id =
             { model | clientId = Just id }
-                ! [ publishAction GetLists ]
     in
         case event of
             Registered id ->
-                fetchInitialLists id
+                fetchInitialLists id ! [ publishAction GetLists ]
 
             GotLists lists ->
-                sortModel lists
+                replaceLists lists model ! []
 
-            CreatedList lists ->
-                sortModel lists
+            CreatedList list ->
+                addList list model ! []
 
-            DeletedList lists ->
-                sortModel lists
+            UpdatedListTitle list ->
+                replaceList list model ! []
 
-            UpdatedListTitle lists ->
-                sortModel lists
+            DeletedList ->
+                model ! []
 
-            CreatedItem lists ->
-                sortModel lists
+            CreatedItem item ->
+                addItem item model ! []
 
-            UpdatedItemText lists ->
-                sortModel lists
+            UpdatedItemText item ->
+                replaceItem item model ! []
 
-            DeletedItem lists ->
-                sortModel lists
-
-
-orderListsAndTheirItems : Model -> List ShoppingList -> Model
-orderListsAndTheirItems model lists =
-    { model
-        | shoppingLists =
-            (earliestFirst << (List.map sortItems)) lists
-    }
-
-
-sortItems : ShoppingList -> ShoppingList
-sortItems list =
-    { list | listItems = earliestFirst list.listItems }
+            DeletedItem ->
+                model ! []

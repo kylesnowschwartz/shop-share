@@ -19,6 +19,7 @@ type Msg
     | ClearCheckedItems ShoppingList
     | DeleteListCancelClicked
     | DeleteListConfirmClicked
+    | FocusItemInput Item
     | WSMessageReceived String
 
 
@@ -44,12 +45,12 @@ type Action
 type Event
     = Registered ClientId
     | GotLists (List ShoppingList)
-    | CreatedList (List ShoppingList)
-    | DeletedList (List ShoppingList)
-    | UpdatedListTitle (List ShoppingList)
-    | CreatedItem (List ShoppingList)
-    | UpdatedItemText (List ShoppingList)
-    | DeletedItem (List ShoppingList)
+    | CreatedList ShoppingList
+    | DeletedList
+    | UpdatedListTitle ShoppingList
+    | CreatedItem Item
+    | UpdatedItemText Item
+    | DeletedItem
 
 
 type alias Model =
