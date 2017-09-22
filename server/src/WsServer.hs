@@ -74,15 +74,15 @@ performAction action =
 
     CreateList list -> do
       maybeList <- runDB (insertList $ listId list)
-      return $ encodeCreatedList maybeList
+      encodeCreatedList <$> runDB (mapM selectItemsForList maybeList)
+
+    UpdateList list -> do
+      maybeList <- runDB $ updateListTitle (listId list) (title list)
+      encodeUpdatedList <$> runDB (mapM selectItemsForList maybeList)
 
     DeleteList list -> do
       runDB $ deleteList $ listId list
       return encodeDeletedList
-
-    UpdateList list -> do
-      maybeList <- runDB (updateListTitle (listId list) (title list))
-      return $ encodeUpdatedList maybeList
 
     CreateItem item -> do
       maybeItem <- runDB $ insertItem item
