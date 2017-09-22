@@ -12,6 +12,8 @@ import JSON
 import Types exposing (..)
 import UpdateHelpers exposing (..)
 import UuidHelpers exposing (..)
+import Debounce
+import Time
 
 
 -- MODEL
@@ -24,8 +26,16 @@ init randomNumber =
     , errorMessage = Nothing
     , uuidSeed = uuidSeedFromInt randomNumber
     , listToDelete = Nothing
+    , debounce = Debounce.init
     }
         ! [ publishAction Register ]
+
+
+debounceConfig : Debounce.Config Msg
+debounceConfig =
+    { strategy = Debounce.later <| 0.5 * Time.second
+    , transform = DebounceMsg
+    }
 
 
 
@@ -81,8 +91,11 @@ update msg model =
             let
                 ( newModel, updatedList ) =
                     editListTitle model list newTitle
+
+                ( newDebounce, cmd ) =
+                    Debounce.push debounceConfig updatedList model.debounce
             in
-                newModel ! [ publishAction <| UpdateList updatedList ]
+                { newModel | debounce = newDebounce } ! [ cmd ]
 
         ItemTextEdited list item newItemText ->
             let
@@ -115,6 +128,22 @@ update msg model =
 
         WSMessageReceived message ->
             handleMessage model message
+
+        DebounceMsg msg ->
+            let
+                ( debounce, cmd ) =
+                    Debounce.update
+                        debounceConfig
+                        (Debounce.takeLast sync)
+                        msg
+                        model.debounce
+            in
+                { model | debounce = debounce } ! [ cmd ]
+
+
+sync : ShoppingList -> Cmd Msg
+sync list =
+    publishAction <| UpdateList list
 
 
 handleMessage : Model -> String -> ( Model, Cmd Msg )

@@ -3,6 +3,7 @@ module Types exposing (..)
 import Uuid as Uuid exposing (Uuid)
 import Random.Pcg as Pcg
 import Date exposing (Date)
+import Debounce
 
 
 -- A Msg is sent to us by the Elm Runtime when something happens.
@@ -20,6 +21,7 @@ type Msg
     | DeleteListCancelClicked
     | DeleteListConfirmClicked
     | WSMessageReceived String
+    | DebounceMsg Debounce.Msg
 
 
 
@@ -58,6 +60,7 @@ type alias Model =
     , errorMessage : Maybe String
     , uuidSeed : Pcg.Seed
     , listToDelete : Maybe ShoppingList
+    , debounce : Debounce.Debounce ShoppingList
     }
 
 
