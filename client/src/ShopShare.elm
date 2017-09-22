@@ -3,7 +3,7 @@ module ShopShare exposing (init, subscriptions, update, view)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onCheck, onClick, onFocus)
-import List.Extra exposing (..)
+import List.Extra
 import WebSocket as WS
 import Action exposing (publishAction)
 import Config exposing (wsAddress)
@@ -19,7 +19,7 @@ import UuidHelpers exposing (..)
 
 init : Int -> ( Model, Cmd Msg )
 init randomNumber =
-    { shoppingLists = []
+    { lists = []
     , clientId = Nothing
     , errorMessage = Nothing
     , uuidSeed = uuidSeedFromInt randomNumber
@@ -121,7 +121,7 @@ handleMessage : Model -> String -> ( Model, Cmd Msg )
 handleMessage model message =
     case JSON.decodeEvent message of
         Ok event ->
-            handleEvent model event
+            handleEvent model (Debug.log "Event: " event)
 
         Err err ->
             { model | errorMessage = Just err } ! []
@@ -133,40 +133,58 @@ handleMessage model message =
 
 view : Model -> Html Msg
 view model =
-    section [ class "section" ]
-        [ deleteListModal model
-        , div
-            [ class "container" ]
-            [ viewPageTitle
-            , viewCreateListButton
-            , viewShoppingLists model
-            , viewErrors model
-            , viewClientId model
+    div []
+        [ viewPageTitle
+        , section [ class "section" ]
+            [ viewDeleteListModal model
+            , div [ class "container" ]
+                [ viewCreateListButton
+                , viewShoppingLists model
+                  -- , viewErrors model
+                  -- , viewClientId model
+                ]
             ]
         ]
 
 
 viewPageTitle : Html Msg
 viewPageTitle =
-    div [ class "section" ] [ h1 [ class "title" ] [ text "Welcome to shop share!" ] ]
+    section [ class "hero is-primary" ]
+        [ div [ class "hero-body" ]
+            [ div [ class "container" ]
+                [ h1 [ class "title" ]
+                    [ text "Welcome to shop share!" ]
+                , h2 [ class "subtitle" ]
+                    [ text "Collaborative shopping in Elm & Haskell" ]
+                ]
+            ]
+        ]
 
 
 viewCreateListButton : Html Msg
 viewCreateListButton =
     div [ class "section is-horizontally-centered" ]
-        [ button
-            [ class "button is-primary"
+        [ a
+            [ class "button is-primary is-outlined"
             , onClick CreateListClicked
             ]
-            [ text "New list" ]
+            [ span []
+                [ text "New list" ]
+            , span [ class "icon is-small" ]
+                [ i [ class "fa fa-cart-plus" ]
+                    []
+                ]
+            ]
         ]
 
 
 viewShoppingLists : Model -> Html Msg
 viewShoppingLists model =
-    div [ class "section columns is-centered is-multiline" ] <|
-        List.map viewShoppingList <|
-            model.shoppingLists
+    section [ class "section" ]
+        [ div [ class "columns is-variable is-8 is-centered is-multiline" ] <|
+            List.map viewShoppingList <|
+                model.lists
+        ]
 
 
 viewShoppingList : ShoppingList -> Html Msg
@@ -174,50 +192,54 @@ viewShoppingList list =
     div [ class "column is-half" ]
         [ viewListTitleAndDeleteButton list
         , viewListItems list
-        , viewClearCheckedItemsButton list
+        , div [ class "columns" ]
+            [ viewAddListItem list
+            , viewClearCheckedItemsButton list
+            ]
         ]
 
 
 viewListTitleAndDeleteButton : ShoppingList -> Html Msg
 viewListTitleAndDeleteButton list =
-    div [ class "columns is-vertically-centered" ]
-        [ input
-            [ class "column is-11 input"
-            , placeholder "List title"
-            , onInput <| ListTitleEdited list
-            , value list.title
+    div [ class "columns is-mobile is-vertically-centered" ]
+        [ div [ class "column" ]
+            [ input
+                [ class "input"
+                , placeholder "List title"
+                , onInput <| ListTitleEdited list
+                , value list.title
+                ]
+                []
             ]
-            []
-        , button
-            [ class "column is-1 button delete is-large is-danger is-pulled-right"
-            , onClick <| DeleteListClicked list
+        , div [ class "column is-narrow" ]
+            [ button
+                [ class "button delete is-large is-primary"
+                , onClick <| DeleteListClicked list
+                ]
+                []
             ]
-            []
         ]
 
 
 viewListItems : ShoppingList -> Html Msg
 viewListItems list =
-    div []
-        [ div [ class "list" ] <|
-            List.map (viewListItem list) list.listItems
-                ++ [ viewAddListItem list ]
-        ]
+    div [ class "box is-borderless" ] <|
+        List.map (viewListItem list) list.listItems
 
 
 viewListItem : ShoppingList -> Item -> Html Msg
 viewListItem list item =
     -- FIXME: Vertical centering not working for small screens:
-    div [ class "columns is-vertically-centered" ]
+    div [ class "columns is-mobile is-vertically-centered" ]
         [ input
             [ Html.Attributes.id <| itemId item
-            , class "column is-10 input is-borderless"
+            , class "column input is-borderless"
             , placeholder "Item name"
             , value item.text
             , onInput <| ItemTextEdited list item
             ]
             []
-        , label [ class "column is-1 checkbox" ]
+        , label [ class "column is-narrow checkbox" ]
             [ input
                 [ type_ "checkbox"
                 , checked item.completed
@@ -226,7 +248,7 @@ viewListItem list item =
                 []
             ]
         , button
-            [ class "column is-1 button delete is-large"
+            [ class "column is-narrow button delete"
             , onClick <| DeleteItemClicked list item
             ]
             []
@@ -235,12 +257,12 @@ viewListItem list item =
 
 viewAddListItem : ShoppingList -> Html Msg
 viewAddListItem list =
-    dd []
+    div [ class "column" ]
         [ input
             [ class "input has-shadow-only"
             , placeholder "Add item"
-            , onClick <| CreateItemClicked list
-            , onFocus <| CreateItemClicked list
+            , CreateItemClicked list |> onClick
+            , CreateItemClicked list |> onFocus
             ]
             []
         ]
@@ -248,15 +270,17 @@ viewAddListItem list =
 
 viewClearCheckedItemsButton : ShoppingList -> Html Msg
 viewClearCheckedItemsButton list =
-    button
-        [ class "button is-light is-pulled-right"
-        , onClick <| ClearCheckedItems list
+    div [ class "column has-gap-below" ]
+        [ button
+            [ class "button is-light is-pulled-right"
+            , onClick <| ClearCheckedItems list
+            ]
+            [ text "clear checked items" ]
         ]
-        [ text "clear checked items" ]
 
 
-deleteListModal : Model -> Html Msg
-deleteListModal model =
+viewDeleteListModal : Model -> Html Msg
+viewDeleteListModal model =
     let
         modalClass =
             case model.listToDelete of
@@ -271,7 +295,7 @@ deleteListModal model =
             , div
                 [ class "modal-content is-horizontally-centered" ]
                 [ button
-                    [ class "button is-danger"
+                    [ class "button is-primary is-large"
                     , onClick DeleteListConfirmClicked
                     ]
                     [ text "Permanently delete this shopping list" ]
