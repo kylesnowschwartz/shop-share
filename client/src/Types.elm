@@ -46,14 +46,14 @@ type Event
     | GotLists (List ShoppingList)
     | CreatedList ShoppingList
     | DeletedList
-    | UpdatedListTitle ShoppingList
+    | UpdatedList ShoppingList
     | CreatedItem Item
     | UpdatedItemText Item
     | DeletedItem
 
 
 type alias Model =
-    { shoppingLists : List ShoppingList
+    { lists : List ShoppingList
     , clientId : Maybe ClientId
     , errorMessage : Maybe String
     , uuidSeed : Pcg.Seed

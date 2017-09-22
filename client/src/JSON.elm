@@ -87,7 +87,7 @@ emptyObject =
 
 decodeEvent : String -> Result String Event
 decodeEvent message =
-    decodeString eventDecoder message
+    decodeString eventDecoder (Debug.log "Message: " message)
 
 
 eventDecoder : Decoder Event
@@ -149,7 +149,7 @@ createdListEventDecoder =
 
 updatedListEventDecoder : Decoder Event
 updatedListEventDecoder =
-    map UpdatedListTitle <| actionConfirmationDecoder "list" <| listDecoder
+    map UpdatedList <| actionConfirmationDecoder "list" <| listDecoder
 
 
 deletedListEventDecoder : Decoder Event

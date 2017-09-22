@@ -18,14 +18,15 @@ handleEvent model event =
                 fetchInitialLists id ! [ publishAction GetLists ]
 
             GotLists lists ->
-                replaceLists lists model ! []
+                { model | lists = lists } ! []
 
             CreatedList list ->
-                addList list model ! []
+                { model | lists = replaceById list model.lists } ! []
 
-            UpdatedListTitle list ->
-                replaceList list model ! []
+            UpdatedList list ->
+                { model | lists = replaceById (Debug.log "List: " list) model.lists } ! []
 
+            -- TODO: Need to send listId along with DeletedList so clients can remove.
             DeletedList ->
                 model ! []
 
