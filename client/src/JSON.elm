@@ -17,7 +17,7 @@ encodeAction action =
     encode 0
         (object
             [ ( "action"
-              , (encodeActionTypeAndData action)
+              , encodeActionTypeAndData action
               )
             ]
         )
@@ -61,7 +61,7 @@ encodeActionTypeAndData action =
 encodeList : ShoppingList -> Encode.Value
 encodeList list =
     object
-        [ ( "listId", Encode.string (listId list) )
+        [ ( "listId", Encode.string <| listId list )
         , ( "title", Encode.string list.title )
         ]
 
@@ -69,8 +69,8 @@ encodeList list =
 encodeItem : Item -> Encode.Value
 encodeItem item =
     object
-        [ ( "itemId", Encode.string (itemId item) )
-        , ( "listId", Encode.string (listIdToString item.listId) )
+        [ ( "itemId", Encode.string <| itemId item )
+        , ( "listId", Encode.string <| listIdToString item.listId )
         , ( "text", Encode.string item.text )
         , ( "completed", Encode.bool item.completed )
         ]
@@ -87,7 +87,7 @@ emptyObject =
 
 decodeEvent : String -> Result String Event
 decodeEvent message =
-    decodeString eventDecoder message
+    decodeString eventDecoder (Debug.log "Message: " message)
 
 
 eventDecoder : Decoder Event
@@ -97,84 +97,93 @@ eventDecoder =
             (\type_ ->
                 case type_ of
                     "Register" ->
-                        decodeRegisteredEvent
+                        registeredEventDecoder
 
                     "GetLists" ->
-                        decodeGotListsEvent
+                        gotListsEventDecoder
 
                     "CreateList" ->
-                        decodeCreatedListEvent
+                        createdListEventDecoder
 
                     "UpdateList" ->
-                        decodeUpdatedListEvent
+                        updatedListEventDecoder
 
                     "DeleteList" ->
-                        decodeDeletedListEvent
+                        deletedListEventDecoder
 
                     "CreateItem" ->
-                        decodeCreatedItemEvent
+                        createdItemEventDecoder
 
                     "UpdateItem" ->
-                        decodeUpdatedItemEvent
+                        updatedItemEventDecoder
+
+                    "DeleteItem" ->
+                        deletedItemEventDecoder
 
                     other ->
                         fail <| "Unknown event received from server: " ++ other
             )
 
 
-decodeRegisteredEvent : Decoder Event
-decodeRegisteredEvent =
-    map Registered
-        (at [ "confirmAction", "data", "clientId" ] (map ClientId uuid))
+registeredEventDecoder : Decoder Event
+registeredEventDecoder =
+    map Registered <|
+        at [ "confirmAction", "data", "clientId" ] <|
+            map ClientId uuid
 
 
-listsDecoder : Decoder (List ShoppingList)
-listsDecoder =
-    at [ "confirmAction", "data", "lists" ] (Decode.list decodeShoppingList)
+actionConfirmationDecoder : String -> Decoder a -> Decoder a
+actionConfirmationDecoder key decoder =
+    at [ "confirmAction", "data", key ] <| decoder
 
 
-decodeGotListsEvent : Decoder Event
-decodeGotListsEvent =
-    map GotLists listsDecoder
+gotListsEventDecoder : Decoder Event
+gotListsEventDecoder =
+    map GotLists <| actionConfirmationDecoder "lists" <| Decode.list listDecoder
 
 
-decodeCreatedListEvent : Decoder Event
-decodeCreatedListEvent =
-    map CreatedList listsDecoder
+createdListEventDecoder : Decoder Event
+createdListEventDecoder =
+    map CreatedList <| actionConfirmationDecoder "list" <| listDecoder
 
 
-decodeDeletedListEvent : Decoder Event
-decodeDeletedListEvent =
-    map DeletedList listsDecoder
+updatedListEventDecoder : Decoder Event
+updatedListEventDecoder =
+    map UpdatedList <| actionConfirmationDecoder "list" <| listDecoder
 
 
-decodeUpdatedListEvent : Decoder Event
-decodeUpdatedListEvent =
-    map UpdatedListTitle listsDecoder
+deletedListEventDecoder : Decoder Event
+deletedListEventDecoder =
+    succeed DeletedList
 
 
-decodeCreatedItemEvent : Decoder Event
-decodeCreatedItemEvent =
-    map CreatedItem listsDecoder
+createdItemEventDecoder : Decoder Event
+createdItemEventDecoder =
+    map CreatedItem <| actionConfirmationDecoder "item" <| itemDecoder
 
 
-decodeUpdatedItemEvent : Decoder Event
-decodeUpdatedItemEvent =
-    map UpdatedItemText listsDecoder
+updatedItemEventDecoder : Decoder Event
+updatedItemEventDecoder =
+    map UpdatedItemText <| actionConfirmationDecoder "item" <| itemDecoder
 
 
-decodeShoppingList : Decoder ShoppingList
-decodeShoppingList =
+deletedItemEventDecoder : Decoder Event
+deletedItemEventDecoder =
+    succeed DeletedItem
+
+
+listDecoder : Decoder ShoppingList
+listDecoder =
     decode ShoppingList
         |> required "listId" (map ListId uuid)
         |> required "title" Decode.string
-        |> required "items" (Decode.list decodeItem)
+        |> required "items" (Decode.list itemDecoder)
         |> required "createdAt" (nullable date)
         |> required "updatedAt" (nullable date)
 
 
-decodeItem : Decoder Item
-decodeItem =
+itemDecoder : Decoder Item
+itemDecoder =
     decode Item
         |> required "itemId" (map ItemId uuid)
         |> required "text" Decode.string
@@ -189,7 +198,7 @@ uuid =
     Decode.string
         |> andThen
             (\str ->
-                case (Uuid.fromString str) of
+                case Uuid.fromString str of
                     Just uuid_ ->
                         succeed uuid_
 

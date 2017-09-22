@@ -43,7 +43,7 @@ nextClientId =
 connect :: MVar State -> Client -> IO ()
 connect stateMVar client@Client{..} = do
   modifyMVar_ stateMVar $ updateClients Set.insert client
-  WS.sendTextData conn $ encodeActionConfirmation Register clientId
+  WS.sendTextData conn $ encodeRegistered clientId
 
 disconnect :: MVar State -> Client -> IO ()
 disconnect stateMVar client =
@@ -68,42 +68,39 @@ handleAction _updatedBy _stateMVar msg =
 performAction :: Action -> IO LazyByteString.ByteString
 performAction action =
   case action of
-    GetLists ->
-      confirmActionAndReturnAllLists
+    GetLists -> do
+      lists <- runDB selectAllLists
+      return $ encodeGetLists lists
 
     CreateList list -> do
-      _ <- runDB (insertList $ listId list)
-      confirmActionAndReturnAllLists
+      maybeList <- runDB (insertList $ listId list)
+      encodeCreatedList <$> runDB (mapM selectItemsForList maybeList)
+
+    UpdateList list -> do
+      maybeList <- runDB $ updateListTitle (listId list) (title list)
+      encodeUpdatedList <$> runDB (mapM selectItemsForList maybeList)
 
     DeleteList list -> do
       runDB $ deleteList $ listId list
-      confirmActionAndReturnAllLists
-
-    UpdateList list -> do
-      _ <- runDB (updateListTitle (listId list) (title list))
-      confirmActionAndReturnAllLists
+      return encodeDeletedList
 
     CreateItem item -> do
-      _ <- runDB $ insertItem item
-      confirmActionAndReturnAllLists
+      maybeItem <- runDB $ insertItem item
+      return $ encodeCreatedItem maybeItem
 
     UpdateItem item -> do
-      _ <- runDB $ updateItem item
-      confirmActionAndReturnAllLists
+      maybeItem <- runDB $ updateItem item
+      return $ encodeUpdatedItem maybeItem
 
     DeleteItem item -> do
       runDB $ deleteItem $ itemId item
-      confirmActionAndReturnAllLists
+      return encodeDeletedItem
 
     Register ->
       return $ encodeError $ Text.pack "You're already registered on this connection!"
 
     _ ->
       return $ encodeError $ Text.pack "Action not yet built. Sorry!"
-
-  where
-    confirmActionAndReturnAllLists =
-      encodeActionConfirmation action <$> runDB selectAllLists
 
 updateClients :: (Client -> Set Client -> Set Client) -> Client -> State -> IO State
 updateClients alteration client state =

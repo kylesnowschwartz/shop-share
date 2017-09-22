@@ -44,16 +44,16 @@ type Action
 type Event
     = Registered ClientId
     | GotLists (List ShoppingList)
-    | CreatedList (List ShoppingList)
-    | DeletedList (List ShoppingList)
-    | UpdatedListTitle (List ShoppingList)
-    | CreatedItem (List ShoppingList)
-    | UpdatedItemText (List ShoppingList)
-    | DeletedItem (List ShoppingList)
+    | CreatedList ShoppingList
+    | DeletedList
+    | UpdatedList ShoppingList
+    | CreatedItem Item
+    | UpdatedItemText Item
+    | DeletedItem
 
 
 type alias Model =
-    { shoppingLists : List ShoppingList
+    { lists : List ShoppingList
     , clientId : Maybe ClientId
     , errorMessage : Maybe String
     , uuidSeed : Pcg.Seed

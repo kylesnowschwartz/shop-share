@@ -2,53 +2,44 @@ module Event exposing (..)
 
 import Action exposing (..)
 import Types exposing (..)
-import UpdateHelpers exposing (earliestFirst)
+import UpdateHelpers exposing (..)
+import Ports exposing (focusItemInputPort)
+import UuidHelpers exposing (..)
 
 
 handleEvent : Model -> Event -> ( Model, Cmd Msg )
 handleEvent model event =
     let
-        sortModel lists =
-            orderListsAndTheirItems model lists ! []
-
         fetchInitialLists id =
             { model | clientId = Just id }
-                ! [ publishAction GetLists ]
     in
         case event of
             Registered id ->
-                fetchInitialLists id
+                fetchInitialLists id ! [ publishAction GetLists ]
 
             GotLists lists ->
-                sortModel lists
+                { model | lists = lists } ! []
 
-            CreatedList lists ->
-                sortModel lists
+            CreatedList list ->
+                { model | lists = replaceById list model.lists } ! []
 
-            DeletedList lists ->
-                sortModel lists
+            UpdatedList list ->
+                { model | lists = replaceById (Debug.log "List: " list) model.lists } ! []
 
-            UpdatedListTitle lists ->
-                sortModel lists
+            -- TODO: Need to send listId along with DeletedList so clients can remove.
+            DeletedList ->
+                model ! []
 
-            CreatedItem lists ->
-                sortModel lists
+            CreatedItem item ->
+                addItem item model ! [ focusItemInput item ]
 
-            UpdatedItemText lists ->
-                sortModel lists
+            UpdatedItemText item ->
+                replaceItem item model ! []
 
-            DeletedItem lists ->
-                sortModel lists
-
-
-orderListsAndTheirItems : Model -> List ShoppingList -> Model
-orderListsAndTheirItems model lists =
-    { model
-        | shoppingLists =
-            (earliestFirst << (List.map sortItems)) lists
-    }
+            DeletedItem ->
+                model ! []
 
 
-sortItems : ShoppingList -> ShoppingList
-sortItems list =
-    { list | listItems = earliestFirst list.listItems }
+focusItemInput : Item -> Cmd Msg
+focusItemInput item =
+    focusItemInputPort <| itemId item

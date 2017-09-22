@@ -37,7 +37,7 @@ selectAllLists = do
 
 selectItemsForList :: List -> PGTransaction List
 selectItemsForList list = do
-  let queryStr = "SELECT * FROM items WHERE list_id = (?)"
+  let queryStr = "SELECT * FROM items WHERE list_id = ?"
   listItems <- query (PG.Only $ listId list) queryStr
   return list { items = listItems }
 

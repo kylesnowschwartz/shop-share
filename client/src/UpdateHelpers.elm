@@ -1,38 +1,54 @@
 module UpdateHelpers exposing (..)
 
-import Date
+-- import Date
+
 import Types exposing (..)
-import List.Extra exposing (..)
+import List.Extra exposing (replaceIf, remove, find)
 import UuidHelpers exposing (..)
+
+
+-- A weak point of the current version of Elm, in my opinion, is the
+-- record update syntax. These helper functions aims to alleviate some
+-- of that annoyance.
+
+import List.Extra exposing (replaceIf)
+
+
+{-| Replace an element in a list based on id. This is essentially just
+teaching List.Extra.replaceIf about ids.
+-}
+replaceById : { a | id : b } -> List { a | id : b } -> List { a | id : b }
+replaceById replacement =
+    replaceIf (\x -> x.id == replacement.id) replacement
 
 
 replaceList : ShoppingList -> Model -> Model
 replaceList updatedList model =
-    { model
-        | shoppingLists = List.map (replaceIfUpdated updatedList) model.shoppingLists
-    }
+    { model | lists = replaceById updatedList model.lists }
 
 
-replaceIfUpdated : { a | id : b } -> { a | id : b } -> { a | id : b }
-replaceIfUpdated updated a =
-    if a.id == updated.id then
-        updated
-    else
-        a
-
-
-earliestFirst : List { a | createdAt : Maybe b } -> List { a | createdAt : Maybe b }
-earliestFirst a =
+addItem : Item -> Model -> Model
+addItem newItem model =
     let
-        earliestFirstDefaultingToLast a =
-            case a.createdAt of
-                Nothing ->
-                    toString (Date.fromTime 2147483647.0)
+        newLists =
+            List.map updateList model.lists
 
-                Just date ->
-                    toString date
+        updateList list =
+            { list | listItems = replaceById newItem list.listItems }
     in
-        (List.sortBy earliestFirstDefaultingToLast a)
+        { model | lists = newLists }
+
+
+replaceItem : Item -> Model -> Model
+replaceItem updatedItem model =
+    let
+        newLists =
+            List.map updateList model.lists
+
+        updateList list =
+            { list | listItems = replaceById updatedItem list.listItems }
+    in
+        { model | lists = newLists }
 
 
 editListTitle : Model -> ShoppingList -> String -> ( Model, ShoppingList )
@@ -46,12 +62,12 @@ editListTitle model list newTitle =
 
 deleteList : Model -> ShoppingList -> Model
 deleteList model list =
-    { model | shoppingLists = List.Extra.remove list model.shoppingLists }
+    { model | lists = remove list model.lists }
 
 
 updateItem : Item -> ShoppingList -> ShoppingList
 updateItem updatedItem list =
-    { list | listItems = List.map (replaceIfUpdated updatedItem) list.listItems }
+    { list | listItems = replaceById updatedItem list.listItems }
 
 
 deleteItem : Item -> ShoppingList -> ShoppingList
@@ -61,7 +77,7 @@ deleteItem item list =
 
 listForItem : Model -> Item -> Maybe ShoppingList
 listForItem model item =
-    find (\l -> l.id == item.listId) model.shoppingLists
+    find (\l -> l.id == item.listId) model.lists
 
 
 createListWithNewUuid : Model -> ( Model, ShoppingList )
@@ -78,7 +94,7 @@ createListWithNewUuid model =
             , updatedAt = Nothing
             }
     in
-        ( { newModel | shoppingLists = model.shoppingLists ++ [ newList ] }, newList )
+        ( { newModel | lists = model.lists ++ [ newList ] }, newList )
 
 
 createItemWithNewUuid : Model -> ShoppingList -> ( Model, Item )
