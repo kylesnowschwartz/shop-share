@@ -87,7 +87,7 @@ emptyObject =
 
 decodeEvent : String -> Result String Event
 decodeEvent message =
-    decodeString eventDecoder (Debug.log "Message: " message)
+    decodeString eventDecoder message
 
 
 eventDecoder : Decoder Event

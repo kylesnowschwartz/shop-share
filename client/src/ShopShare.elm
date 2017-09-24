@@ -1,19 +1,18 @@
 module ShopShare exposing (init, subscriptions, update, view)
 
+import Config exposing (wsAddress)
+import CssHelpers exposing (activeClassIfJust)
+import Debounce
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onCheck, onClick, onFocus)
-import List.Extra
-import WebSocket as WS
-import Action exposing (publishAction)
-import Config exposing (wsAddress)
-import Event exposing (..)
 import JSON
-import Types exposing (..)
-import UpdateHelpers exposing (..)
-import UuidHelpers exposing (..)
-import Debounce
+import PubSub exposing (publish, processEvent)
+import RecordHelpers exposing (..)
 import Time
+import Types exposing (..)
+import UuidHelpers exposing (itemId, uuidSeedFromInt)
+import WebSocket as WS
 
 
 -- MODEL
@@ -26,14 +25,15 @@ init randomNumber =
     , errorMessage = Nothing
     , uuidSeed = uuidSeedFromInt randomNumber
     , listToDelete = Nothing
-    , debounce = Debounce.init
+    , listDebouncer = Debounce.init
+    , itemDebouncer = Debounce.init
     }
-        ! [ publishAction Register ]
+        ! [ publish Register ]
 
 
 debounceConfig : Debounce.Config Msg
 debounceConfig =
-    { strategy = Debounce.later <| 0.5 * Time.second
+    { strategy = Debounce.later <| 1 * Time.second
     , transform = DebounceMsg
     }
 
@@ -59,98 +59,87 @@ update msg model =
                 ( newModel, newList ) =
                     createListWithNewUuid model
             in
-                newModel ! [ publishAction <| CreateList newList ]
+                newModel ! [ CreateList newList |> publish ]
+
+        ListTitleEdited list newTitle ->
+            let
+                ( newModel, newList ) =
+                    editListTitle model list newTitle
+
+                ( newDebounce, cmd ) =
+                    Debounce.push debounceConfig newList model.listDebouncer
+            in
+                { newModel | listDebouncer = newDebounce } ! [ cmd ]
 
         DeleteListClicked list ->
             { model | listToDelete = Just list } ! []
 
-        DeleteListConfirmClicked ->
+        DeleteListCancelClicked ->
+            { model | listToDelete = Nothing } ! []
+
+        ConfirmDeleteListClicked ->
             case model.listToDelete of
                 Nothing ->
                     model ! []
 
                 Just list ->
-                    let
-                        updatedModel =
-                            deleteList model list
-                    in
-                        { updatedModel | listToDelete = Nothing }
-                            ! [ publishAction <| DeleteList list ]
-
-        DeleteListCancelClicked ->
-            { model | listToDelete = Nothing } ! []
+                    deleteList model list ! [ DeleteList list |> publish ]
 
         CreateItemClicked list ->
             let
                 ( newModel, newItem ) =
                     createItemWithNewUuid model list
             in
-                newModel ! [ publishAction <| CreateItem newItem ]
+                newModel ! [ CreateItem newItem |> publish ]
 
-        ListTitleEdited list newTitle ->
+        ItemTextEdited item newItemText ->
             let
-                ( newModel, updatedList ) =
-                    editListTitle model list newTitle
+                newItem =
+                    { item | text = newItemText }
+
+                newModel =
+                    replaceItem model newItem
 
                 ( newDebounce, cmd ) =
-                    Debounce.push debounceConfig updatedList model.debounce
+                    Debounce.push debounceConfig newItem model.itemDebouncer
             in
-                { newModel | debounce = newDebounce } ! [ cmd ]
+                { newModel | itemDebouncer = newDebounce } ! [ cmd ]
 
-        ItemTextEdited list item newItemText ->
+        ItemChecked item itemChecked ->
             let
-                updatedItem =
-                    { item | text = newItemText }
-            in
-                replaceList (updateItem updatedItem list) model
-                    ! [ publishAction <| UpdateItem updatedItem ]
-
-        ItemChecked list item itemChecked ->
-            let
-                updatedItem =
+                newItem =
                     { item | completed = itemChecked }
             in
-                replaceList (updateItem updatedItem list) model
-                    ! [ publishAction <| UpdateItem updatedItem ]
+                replaceItem model newItem
+                    ! [ UpdateItem newItem |> publish ]
 
-        DeleteItemClicked list deletedItem ->
-            replaceList (deleteItem deletedItem list) model
-                ! [ publishAction <| DeleteItem deletedItem ]
+        DeleteItemClicked item ->
+            deleteItem model item
+                ! [ DeleteItem item |> publish ]
 
         ClearCheckedItems list ->
-            let
-                updatedList =
-                    { list
-                        | listItems = List.Extra.filterNot .completed list.listItems
-                    }
-            in
-                replaceList updatedList model ! []
+            deleteItems model .completed list ! []
 
         WSMessageReceived message ->
-            handleMessage model message
+            processWSMessage model message
 
         DebounceMsg msg ->
             let
                 ( debounce, cmd ) =
                     Debounce.update
                         debounceConfig
-                        (Debounce.takeLast sync)
+                        (Debounce.takeLast <| UpdateList >> publish)
                         msg
-                        model.debounce
+                        model.listDebouncer
             in
-                { model | debounce = debounce } ! [ cmd ]
+                { model | listDebouncer = debounce } ! [ cmd ]
 
 
-sync : ShoppingList -> Cmd Msg
-sync list =
-    publishAction <| UpdateList list
-
-
-handleMessage : Model -> String -> ( Model, Cmd Msg )
-handleMessage model message =
+processWSMessage : Model -> String -> ( Model, Cmd Msg )
+processWSMessage model message =
     case JSON.decodeEvent message of
         Ok event ->
-            handleEvent model (Debug.log "Event: " event)
+            processEvent model event
 
         Err err ->
             { model | errorMessage = Just err } ! []
@@ -163,35 +152,35 @@ handleMessage model message =
 view : Model -> Html Msg
 view model =
     div []
-        [ viewPageTitle
+        [ pageTitle
         , section [ class "section" ]
-            [ viewDeleteListModal model
+            [ deleteListModal model
             , div [ class "container" ]
-                [ viewCreateListButton
+                [ createListButton
                 , viewShoppingLists model
-                  -- , viewErrors model
-                  -- , viewClientId model
                 ]
             ]
         ]
 
 
-viewPageTitle : Html Msg
-viewPageTitle =
+pageTitle : Html Msg
+pageTitle =
     section [ class "hero is-primary" ]
-        [ div [ class "hero-body" ]
-            [ div [ class "container" ]
-                [ h1 [ class "title" ]
-                    [ text "Welcome to shop share!" ]
-                , h2 [ class "subtitle" ]
-                    [ text "Collaborative shopping in Elm & Haskell" ]
-                ]
-            ]
+        [ div [ class "hero-body" ] [ pageHeader ] ]
+
+
+pageHeader : Html Msg
+pageHeader =
+    div [ class "container" ]
+        [ h1 [ class "title" ]
+            [ text "Welcome to shop share!" ]
+        , h2 [ class "subtitle" ]
+            [ text "Collaborative shopping in Elm & Haskell" ]
         ]
 
 
-viewCreateListButton : Html Msg
-viewCreateListButton =
+createListButton : Html Msg
+createListButton =
     div [ class "section is-horizontally-centered" ]
         [ a
             [ class "button is-primary is-outlined"
@@ -200,9 +189,7 @@ viewCreateListButton =
             [ span []
                 [ text "New list" ]
             , span [ class "icon is-small" ]
-                [ i [ class "fa fa-cart-plus" ]
-                    []
-                ]
+                [ i [ class "fa fa-cart-plus" ] [] ]
             ]
         ]
 
@@ -211,142 +198,120 @@ viewShoppingLists : Model -> Html Msg
 viewShoppingLists model =
     section [ class "section" ]
         [ div [ class "columns is-variable is-8 is-centered is-multiline" ] <|
-            List.map viewShoppingList <|
-                model.lists
+            List.map viewShoppingList model.lists
         ]
 
 
 viewShoppingList : ShoppingList -> Html Msg
 viewShoppingList list =
     div [ class "column is-half" ]
-        [ viewListTitleAndDeleteButton list
-        , viewListItems list
+        [ div [ class "columns is-mobile is-vertically-centered" ]
+            [ div [ class "column" ]
+                [ listTitle list ]
+            , div [ class "column is-narrow" ]
+                [ deleteListButton list ]
+            ]
+        , viewItems list
         , div [ class "columns" ]
-            [ viewAddListItem list
-            , viewClearCheckedItemsButton list
+            [ div [ class "column" ]
+                [ addItemButton list ]
+            , div [ class "column has-gap-below" ]
+                [ clearCheckedItemsButton list ]
             ]
         ]
 
 
-viewListTitleAndDeleteButton : ShoppingList -> Html Msg
-viewListTitleAndDeleteButton list =
-    div [ class "columns is-mobile is-vertically-centered" ]
-        [ div [ class "column" ]
-            [ input
-                [ class "input"
-                , placeholder "List title"
-                , onInput <| ListTitleEdited list
-                , value list.title
-                ]
-                []
-            ]
-        , div [ class "column is-narrow" ]
-            [ button
-                [ class "button delete is-large is-primary"
-                , onClick <| DeleteListClicked list
-                ]
-                []
-            ]
+listTitle : ShoppingList -> Html Msg
+listTitle list =
+    input
+        [ class "input"
+        , placeholder "List title"
+        , ListTitleEdited list |> onInput
+        , value list.title
         ]
+        []
 
 
-viewListItems : ShoppingList -> Html Msg
-viewListItems list =
+deleteListButton : ShoppingList -> Html Msg
+deleteListButton list =
+    button
+        [ class "button delete is-large is-primary"
+        , DeleteListClicked list |> onClick
+        ]
+        []
+
+
+viewItems : ShoppingList -> Html Msg
+viewItems list =
     div [ class "box is-borderless" ] <|
-        List.map (viewListItem list) list.listItems
+        List.map viewItem list.listItems
 
 
-viewListItem : ShoppingList -> Item -> Html Msg
-viewListItem list item =
-    -- FIXME: Vertical centering not working for small screens:
+viewItem : Item -> Html Msg
+viewItem item =
     div [ class "columns is-mobile is-vertically-centered" ]
         [ input
-            [ Html.Attributes.id <| itemId item
-            , class "column input is-borderless"
+            [ class "column input is-borderless"
+            , Html.Attributes.id <| itemId item
             , placeholder "Item name"
             , value item.text
-            , onInput <| ItemTextEdited list item
+            , ItemTextEdited item |> onInput
             ]
             []
-        , label [ class "column is-narrow checkbox" ]
+        , label
+            [ class "column is-narrow checkbox" ]
             [ input
                 [ type_ "checkbox"
                 , checked item.completed
-                , Html.Events.onCheck <| ItemChecked list item
+                , ItemChecked item |> onCheck
                 ]
                 []
             ]
         , button
             [ class "column is-narrow button delete"
-            , onClick <| DeleteItemClicked list item
+            , DeleteItemClicked item |> onClick
             ]
             []
         ]
 
 
-viewAddListItem : ShoppingList -> Html Msg
-viewAddListItem list =
-    div [ class "column" ]
-        [ input
-            [ class "input has-shadow-only"
-            , placeholder "Add item"
-            , CreateItemClicked list |> onClick
-            , CreateItemClicked list |> onFocus
+addItemButton : ShoppingList -> Html Msg
+addItemButton list =
+    input
+        [ class "input has-shadow-only"
+        , placeholder "Add item"
+        , CreateItemClicked list |> onClick
+        , CreateItemClicked list |> onFocus
+        ]
+        []
+
+
+clearCheckedItemsButton : ShoppingList -> Html Msg
+clearCheckedItemsButton list =
+    button
+        [ class "button is-light is-pulled-right"
+        , ClearCheckedItems list |> onClick
+        ]
+        [ text "clear checked items" ]
+
+
+deleteListModal : Model -> Html Msg
+deleteListModal model =
+    div [ activeClassIfJust model.listToDelete "modal" ]
+        [ div [ class "modal-background" ]
+            []
+        , div
+            [ class "modal-content is-horizontally-centered" ]
+            [ button
+                -- TODO: Too big on mobile:
+                [ class "button is-primary is-large"
+                , ConfirmDeleteListClicked |> onClick
+                ]
+                [ text "Permanently delete this shopping list" ]
+            ]
+        , button
+            [ class "modal-close is-large"
+            , DeleteListCancelClicked |> onClick
             ]
             []
         ]
-
-
-viewClearCheckedItemsButton : ShoppingList -> Html Msg
-viewClearCheckedItemsButton list =
-    div [ class "column has-gap-below" ]
-        [ button
-            [ class "button is-light is-pulled-right"
-            , onClick <| ClearCheckedItems list
-            ]
-            [ text "clear checked items" ]
-        ]
-
-
-viewDeleteListModal : Model -> Html Msg
-viewDeleteListModal model =
-    let
-        modalClass =
-            case model.listToDelete of
-                Nothing ->
-                    "modal"
-
-                Just list ->
-                    "modal is-active"
-    in
-        div [ class modalClass ]
-            [ div [ class "modal-background" ] []
-            , div
-                [ class "modal-content is-horizontally-centered" ]
-                [ button
-                    [ class "button is-primary is-large"
-                    , onClick DeleteListConfirmClicked
-                    ]
-                    [ text "Permanently delete this shopping list" ]
-                ]
-            , button
-                [ class "modal-close is-large"
-                , onClick DeleteListCancelClicked
-                ]
-                []
-            ]
-
-
-viewErrors : Model -> Html Msg
-viewErrors model =
-    div [] [ text <| Maybe.withDefault "" model.errorMessage ]
-
-
-viewClientId : Model -> Html Msg
-viewClientId model =
-    case model.clientId of
-        Nothing ->
-            div [] []
-
-        Just id ->
-            h3 [] [ text <| "Registered with server as client " ++ toString id ]

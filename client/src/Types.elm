@@ -14,12 +14,12 @@ type Msg
     | DeleteListClicked ShoppingList
     | ListTitleEdited ShoppingList String
     | CreateItemClicked ShoppingList
-    | ItemTextEdited ShoppingList Item String
-    | ItemChecked ShoppingList Item Bool
-    | DeleteItemClicked ShoppingList Item
+    | ItemTextEdited Item String
+    | ItemChecked Item Bool
+    | DeleteItemClicked Item
     | ClearCheckedItems ShoppingList
     | DeleteListCancelClicked
-    | DeleteListConfirmClicked
+    | ConfirmDeleteListClicked
     | WSMessageReceived String
     | DebounceMsg Debounce.Msg
 
@@ -60,7 +60,8 @@ type alias Model =
     , errorMessage : Maybe String
     , uuidSeed : Pcg.Seed
     , listToDelete : Maybe ShoppingList
-    , debounce : Debounce.Debounce ShoppingList
+    , listDebouncer : Debounce.Debounce ShoppingList
+    , itemDebouncer : Debounce.Debounce Item
     }
 
 
