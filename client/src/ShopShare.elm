@@ -31,10 +31,17 @@ init randomNumber =
         ! [ publish Register ]
 
 
-debounceConfig : Debounce.Config Msg
-debounceConfig =
+listDebounceConfig : Debounce.Config Msg
+listDebounceConfig =
     { strategy = Debounce.later <| 1 * Time.second
-    , transform = DebounceMsg
+    , transform = DebounceListMsg
+    }
+
+
+itemDebounceConfig : Debounce.Config Msg
+itemDebounceConfig =
+    { strategy = Debounce.later <| 1 * Time.second
+    , transform = DebounceItemMsg
     }
 
 
@@ -67,7 +74,7 @@ update msg model =
                     editListTitle model list newTitle
 
                 ( newDebounce, cmd ) =
-                    Debounce.push debounceConfig newList model.listDebouncer
+                    Debounce.push listDebounceConfig newList model.listDebouncer
             in
                 { newModel | listDebouncer = newDebounce } ! [ cmd ]
 
@@ -101,7 +108,7 @@ update msg model =
                     replaceItem model newItem
 
                 ( newDebounce, cmd ) =
-                    Debounce.push debounceConfig newItem model.itemDebouncer
+                    Debounce.push itemDebounceConfig newItem model.itemDebouncer
             in
                 { newModel | itemDebouncer = newDebounce } ! [ cmd ]
 
@@ -123,16 +130,27 @@ update msg model =
         WSMessageReceived message ->
             processWSMessage model message
 
-        DebounceMsg msg ->
+        DebounceListMsg msg ->
             let
                 ( debounce, cmd ) =
                     Debounce.update
-                        debounceConfig
+                        listDebounceConfig
                         (Debounce.takeLast <| UpdateList >> publish)
                         msg
                         model.listDebouncer
             in
                 { model | listDebouncer = debounce } ! [ cmd ]
+
+        DebounceItemMsg msg ->
+            let
+                ( newDebounce, cmd ) =
+                    Debounce.update
+                        itemDebounceConfig
+                        (Debounce.takeLast <| UpdateItem >> publish)
+                        msg
+                        model.itemDebouncer
+            in
+                { model | itemDebouncer = newDebounce } ! [ cmd ]
 
 
 processWSMessage : Model -> String -> ( Model, Cmd Msg )

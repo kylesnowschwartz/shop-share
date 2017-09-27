@@ -7,11 +7,11 @@ import           Control.Concurrent            (MVar, modifyMVar_, readMVar)
 import qualified Control.Exception             as Exception
 import           Control.Monad                 (forM_, forever)
 import           Data.ByteString               (ByteString)
-import qualified Data.ByteString.Lazy.Internal as LazyByteString
+import qualified Data.ByteString.Lazy.Internal as LBS
 import           Data.Set                      (Set)
 import qualified Data.Set                      as Set
 import qualified Data.Text                     as Text
-import           Data.UUID                     (UUID)
+import qualified Data.UUID                     (UUID)
 import           Data.UUID.V4                  (nextRandom)
 import           DB
 import           JSON
@@ -36,6 +36,7 @@ wsApp stateMVar pending = do
 
     Left err -> WS.sendTextData connection $ encodeError $ Text.pack err
 
+nextClientId :: IO Data.UUID.UUID
 nextClientId =
   nextRandom
 
@@ -55,7 +56,7 @@ talk stateMVar client = forever $ do
   forM_ (clients state) $ \c ->
     WS.sendTextData (conn c) response
 
-handleAction :: Client -> MVar State -> ByteString -> IO LazyByteString.ByteString
+handleAction :: Client -> MVar State -> ByteString -> IO LBS.ByteString
 handleAction _updatedBy _stateMVar msg =
   case decodeAction msg of
     Left _err ->
@@ -64,7 +65,7 @@ handleAction _updatedBy _stateMVar msg =
     Right action ->
       performAction action
 
-performAction :: Action -> IO LazyByteString.ByteString
+performAction :: Action -> IO LBS.ByteString
 performAction action =
   case action of
     GetLists -> do
