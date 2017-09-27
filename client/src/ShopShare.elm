@@ -42,8 +42,8 @@ debounceConfig =
 -- SUBSCRIPTIONS
 
 
-subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions : a -> Sub Msg
+subscriptions _ =
     WS.listen wsAddress WSMessageReceived
 
 

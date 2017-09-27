@@ -37,8 +37,9 @@ selectAllLists = do
 
 selectItemsForList :: List -> PGTransaction List
 selectItemsForList list = do
-  let queryStr = "SELECT * FROM items WHERE list_id = ?"
-  listItems <- query (PG.Only $ listId list) queryStr
+  listItems <- query (PG.Only $ listId list) "SELECT * FROM items WHERE list_id = ?"
+
+
   return list { items = listItems }
 
 insertList :: UUID -> PGTransaction (Maybe List)

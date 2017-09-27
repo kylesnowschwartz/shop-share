@@ -36,7 +36,6 @@ wsApp stateMVar pending = do
 
     Left err -> WS.sendTextData connection $ encodeError $ Text.pack err
 
-nextClientId :: IO UUID
 nextClientId =
   nextRandom
 
