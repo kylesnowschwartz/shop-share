@@ -14,6 +14,7 @@ type Msg
     | DeleteListClicked ShoppingList
     | ListTitleEdited ShoppingList String
     | CreateItemClicked ShoppingList
+    | FocusItem Item
     | ItemTextEdited Item String
     | ItemChecked Item Bool
     | DeleteItemClicked Item
@@ -21,8 +22,8 @@ type Msg
     | DeleteListCancelClicked
     | ConfirmDeleteListClicked
     | WSMessageReceived String
-    | DebounceListMsg Debounce.Msg
-    | DebounceItemMsg Debounce.Msg
+    | DebounceListTitle Debounce.Msg
+    | DebounceItemText Debounce.Msg
 
 
 

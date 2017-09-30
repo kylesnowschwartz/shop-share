@@ -4,7 +4,7 @@ import Config exposing (wsAddress)
 import JSON
 import Ports exposing (focusItemInput)
 import Types exposing (..)
-import RecordHelpers exposing (replaceItem, replaceList)
+import UpdateHelpers exposing (replaceItem, replaceList)
 import WebSocket as WS
 
 

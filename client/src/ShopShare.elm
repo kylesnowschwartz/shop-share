@@ -3,13 +3,15 @@ module ShopShare exposing (init, subscriptions, update, view)
 import Config exposing (wsAddress)
 import CssHelpers exposing (activeClassIfJust)
 import Debounce
+import Debouncers exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onCheck, onClick, onFocus)
 import JSON
 import PubSub exposing (publish, processEvent)
-import RecordHelpers exposing (..)
-import Time
+import Ports exposing (focusItemInput)
+import UpdateHelpers exposing (..)
+import Task
 import Types exposing (..)
 import UuidHelpers exposing (itemId, uuidSeedFromInt)
 import WebSocket as WS
@@ -31,20 +33,6 @@ init randomNumber =
         ! [ publish Register ]
 
 
-listDebounceConfig : Debounce.Config Msg
-listDebounceConfig =
-    { strategy = Debounce.later <| 1 * Time.second
-    , transform = DebounceListMsg
-    }
-
-
-itemDebounceConfig : Debounce.Config Msg
-itemDebounceConfig =
-    { strategy = Debounce.later <| 1 * Time.second
-    , transform = DebounceItemMsg
-    }
-
-
 
 -- SUBSCRIPTIONS
 
@@ -56,6 +44,11 @@ subscriptions _ =
 
 
 -- UPDATE
+
+
+perform : msg -> Cmd msg
+perform =
+    Task.perform identity << Task.succeed
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -71,12 +64,9 @@ update msg model =
         ListTitleEdited list newTitle ->
             let
                 ( newModel, newList ) =
-                    editListTitle model list newTitle
-
-                ( newDebounce, cmd ) =
-                    Debounce.push listDebounceConfig newList model.listDebouncer
+                    replaceList_ model { list | title = newTitle }
             in
-                { newModel | listDebouncer = newDebounce } ! [ cmd ]
+                pushListEditIntoDebouncer newModel newList
 
         DeleteListClicked list ->
             { model | listToDelete = Just list } ! []
@@ -97,28 +87,24 @@ update msg model =
                 ( newModel, newItem ) =
                     createItemWithNewUuid model list
             in
-                newModel ! [ CreateItem newItem |> publish ]
+                newModel ! [ perform <| FocusItem newItem, CreateItem newItem |> publish ]
 
-        ItemTextEdited item newItemText ->
+        FocusItem item ->
+            model ! [ focusItemInput item ]
+
+        ItemTextEdited item newText ->
             let
-                newItem =
-                    { item | text = newItemText }
-
-                newModel =
-                    replaceItem model newItem
-
-                ( newDebounce, cmd ) =
-                    Debounce.push itemDebounceConfig newItem model.itemDebouncer
+                ( newModel, newItem ) =
+                    replaceItem_ model { item | text = newText }
             in
-                { newModel | itemDebouncer = newDebounce } ! [ cmd ]
+                pushItemEditIntoDebouncer newModel newItem
 
         ItemChecked item itemChecked ->
             let
-                newItem =
-                    { item | completed = itemChecked }
+                ( newModel, newItem ) =
+                    replaceItem_ model { item | completed = itemChecked }
             in
-                replaceItem model newItem
-                    ! [ UpdateItem newItem |> publish ]
+                newModel ! [ UpdateItem newItem |> publish ]
 
         DeleteItemClicked item ->
             deleteItem model item
@@ -130,27 +116,11 @@ update msg model =
         WSMessageReceived message ->
             processWSMessage model message
 
-        DebounceListMsg msg ->
-            let
-                ( debounce, cmd ) =
-                    Debounce.update
-                        listDebounceConfig
-                        (Debounce.takeLast <| UpdateList >> publish)
-                        msg
-                        model.listDebouncer
-            in
-                { model | listDebouncer = debounce } ! [ cmd ]
+        DebounceListTitle debounceMsg ->
+            performDebouncedListEdit model debounceMsg <| UpdateList >> publish
 
-        DebounceItemMsg msg ->
-            let
-                ( newDebounce, cmd ) =
-                    Debounce.update
-                        itemDebounceConfig
-                        (Debounce.takeLast <| UpdateItem >> publish)
-                        msg
-                        model.itemDebouncer
-            in
-                { model | itemDebouncer = newDebounce } ! [ cmd ]
+        DebounceItemText debounceMsg ->
+            performDebouncedItemEdit model debounceMsg <| UpdateItem >> publish
 
 
 processWSMessage : Model -> String -> ( Model, Cmd Msg )
@@ -295,13 +265,12 @@ viewItem item =
 
 addItemButton : ShoppingList -> Html Msg
 addItemButton list =
-    input
-        [ class "input has-shadow-only"
-        , placeholder "Add item"
+    button
+        [ class "button"
         , CreateItemClicked list |> onClick
-        , CreateItemClicked list |> onFocus
         ]
-        []
+        [ text "Add item"
+        ]
 
 
 clearCheckedItemsButton : ShoppingList -> Html Msg
