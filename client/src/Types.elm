@@ -22,8 +22,8 @@ type Msg
     | DeleteListCancelClicked
     | ConfirmDeleteListClicked
     | WSMessageReceived String
-    | DebounceListTitle Debounce.Msg
-    | DebounceItemText Debounce.Msg
+    | DebounceListEdit Debounce.Msg
+    | DebounceItemEdit Debounce.Msg
 
 
 

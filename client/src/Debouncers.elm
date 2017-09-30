@@ -8,14 +8,14 @@ import Time exposing (second)
 debounceListTitleConfig : Config Msg
 debounceListTitleConfig =
     { strategy = later <| 0.5 * second
-    , transform = DebounceListTitle
+    , transform = DebounceListEdit
     }
 
 
 debounceItemTextConfig : Config Msg
 debounceItemTextConfig =
     { strategy = later <| 0.5 * second
-    , transform = DebounceItemText
+    , transform = DebounceItemEdit
     }
 
 

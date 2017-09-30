@@ -116,10 +116,10 @@ update msg model =
         WSMessageReceived message ->
             processWSMessage model message
 
-        DebounceListTitle debounceMsg ->
+        DebounceListEdit debounceMsg ->
             performDebouncedListEdit model debounceMsg <| UpdateList >> publish
 
-        DebounceItemText debounceMsg ->
+        DebounceItemEdit debounceMsg ->
             performDebouncedItemEdit model debounceMsg <| UpdateItem >> publish
 
 
