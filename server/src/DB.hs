@@ -74,3 +74,9 @@ deleteItem :: UUID -> PGTransaction ()
 deleteItem itemId' = do
   _ <- execute (PG.Only itemId') "DELETE FROM items WHERE id = ?"
   return ()
+
+flushDb :: PGTransaction ()
+flushDb = do
+  _ <- execute () "DELETE FROM items"
+  _ <- execute () "DELETE FROM lists"
+  return ()
